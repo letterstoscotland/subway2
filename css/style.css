@@ -21,7 +21,7 @@ html, body { height:100%; margin:0; background:#000;
   font-weight:600; letter-spacing:.02em; line-height:1;
   background-size:1.2vmin 1.2vmin; -webkit-background-clip:text; background-clip:text; color:transparent;
   text-shadow:0 0 4px rgba(255,176,0,.45), 0 0 10px rgba(255,176,0,.28);
-  display:inline-block; transform:scaleX(0.92); transform-origin:center; }
+  display:inline-block; transform:scaleX(0.92); }
 .line-lg{ font-size:6.2vh; background-image:radial-gradient(#ffc84d 60%, transparent 62%); }
 .line-sm{ font-size:3.2vh; background-image:radial-gradient(#ff9a00 60%, transparent 62%); }
 
