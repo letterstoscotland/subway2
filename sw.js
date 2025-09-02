@@ -1,4 +1,4 @@
-const CACHE = 'subway-board-v3';
+const CACHE = 'subway-board-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
   './config/schedule.json',
   './config/settings.json',
   './config/sheets.json'
+  './fonts/dot-matrix.woff2'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
