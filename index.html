@@ -3,34 +3,144 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>4:3 Box Test — 95% Width</title>
+  <title>Glasgow Subway Board</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Subway Board">
   <style>
     html, body {
-      height: 100%;
-      margin: 0;
-      background: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      height: 100%; margin: 0; background: black;
+      display: flex; align-items: center; justify-content: center;
     }
-
-    /* Box is always 95% of viewport width */
     .wrap { width: 95vw; }
-
-    /* Keep exact 4:3 ratio */
     .ratio-4x3 { position: relative; width: 100%; }
     .ratio-4x3::before { content: ""; display: block; padding-top: 75%; }
-    .box { position: absolute; inset: 0; background: black; }
+    .board { position: absolute; inset: 0; display: grid;
+      grid-template-rows: 22fr 3fr 14fr 3fr 22fr 3fr 14fr 3fr 10fr;
+      grid-template-columns: 100%; background: black; }
+    .panel { display: flex; align-items: center; justify-content: center;
+      background:black; background-image: radial-gradient(rgba(255,176,0,.25) 11%, transparent 12%);
+      background-size: 1.2vmin 1.2vmin; overflow:hidden; }
+    .panel.headline{justify-content:space-between; padding:0 3%;}
+    .panel.advisory{justify-content:flex-start; padding:0 3%;}
+    .panel.time{justify-content:center;}
+    .gap{background:black;}
+    .line{margin:0;white-space:nowrap;font-family:"Courier New", monospace;font-weight:700;letter-spacing:.05em;line-height:1;background-size:1.2vmin 1.2vmin;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 4px rgba(255,176,0,.45),0 0 10px rgba(255,176,0,.28);}
+    .line-lg{font-size:6.2vh;background-image:radial-gradient(#ffc84d 60%, transparent 62%);} 
+    .line-sm{font-size:3.2vh;background-image:radial-gradient(#ff9a00 60%, transparent 62%);} 
+    .flashing{animation: flash 1s steps(1,end) infinite;} @keyframes flash{0%,49%{opacity:1}50%,100%{opacity:0}}
+    .marquee{position:relative;overflow:hidden;width:100%;height:100%;display:flex;align-items:center;}
+    .scroll{display:inline-block;white-space:nowrap;will-change:transform;}
+    @keyframes scroll-left{from{transform:translateX(100%);}to{transform:translateX(-100%);} }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="ratio-4x3">
-      <div class="box"></div>
+      <div class="board">
+        <section class="panel headline"><h1 class="line line-lg" id="headA_left">Inner next arrival</h1><h1 class="line line-lg" id="headA_right">8min</h1></section>
+        <div class="gap"></div>
+        <section class="panel advisory"><div class="marquee"><div class="scroll" id="advA"></div></div></section>
+        <div class="gap"></div>
+        <section class="panel headline"><h1 class="line line-lg" id="headB_left">Outer next arrival</h1><h1 class="line line-lg" id="headB_right">8min</h1></section>
+        <div class="gap"></div>
+        <section class="panel advisory"><div class="marquee"><div class="scroll" id="advB"></div></div></section>
+        <div class="gap"></div>
+        <section class="panel time"><span class="line line-sm" id="clock"></span></section>
+      </div>
     </div>
   </div>
+<script>
+const tz = "Europe/London";
+function now(){return new Date(new Date().toLocaleString("en-GB",{timeZone:tz}));}
+
+// Config
+const baseAdvisories=["Keep your belongings with you at all times","Please Mind the Gap","Report anything suspicious"];
+const termA="NEXT INNER TERMINATES AT GOVAN";
+const termB="NEXT OUTER TERMINATES AT IBROX";
+const footballMsg="Football – system busy 1–6pm";
+
+// Countdown state
+let aStart=3*60; let bStart=8*60; // offset start
+let aCounter=aStart; let bCounter=bStart;
+let aCycle=0; let bCycle=0;
+
+function updateClock(){
+  const d=now();
+  document.getElementById("clock").textContent="Time Now "+d.toLocaleTimeString("en-GB",{hour12:false});
+}
+
+function serviceRunning(d){
+  const day=d.getDay(); // 0=Sun
+  const mins=d.getHours()*60+d.getMinutes();
+  if(day===0) return mins>=630&&mins<1830; // Sunday 06:30–18:30
+  return mins>=630&&mins<2330; // Mon–Sat
+}
+
+function cutoffMins(d){return (d.getDay()===0?18*60+21:23*60+21);} // last approach start
+
+function cycle(head,counter,elemL,elemR,serviceKey){
+  const d=now();
+  const mins=d.getHours()*60+d.getMinutes();
+  if(!serviceRunning(d)){
+    elemL.textContent=head+" service complete";
+    elemR.textContent="";
+    return [counter,serviceKey];
+  }
+  if(counter>0){
+    if(counter<=10){
+      elemL.textContent=head+" approaching";
+      elemL.classList.add("flashing");
+      elemR.textContent="";
+    }else{
+      elemL.textContent=head+" next arrival";
+      elemL.classList.remove("flashing");
+      elemR.textContent=Math.ceil(counter/60)+"min";
+    }
+    counter--;
+  } else {
+    counter=8*60; serviceKey++;
+  }
+  if(mins>=cutoffMins(d)&&counter<=10){
+    elemL.textContent=head+" service complete";
+    elemR.textContent="";
+    return [counter,serviceKey];
+  }
+  return [counter,serviceKey];
+}
+
+function rotateAdvisories(){
+  const d=now(); const day=d.getDay();
+  const month=d.getMonth(); // 0=Jan
+  const yearDay=d.getFullYear()*100+month; // approx for season
+  let advsA=[...baseAdvisories]; let advsB=[...baseAdvisories];
+  // football Sat Aug–May 13-18h
+  if(day===6&&(month>=7||month<=4)&&d.getHours()>=13&&d.getHours()<18){
+    advsA.push(footballMsg); advsB.push(footballMsg);
+  }
+  if(aCycle%3===2&&(day>=1&&day<=5||day===0&&d.getHours()>=17&&d.getHours()<18.5)) advsA.push(termA);
+  if(bCycle%3===2&&(day>=1&&day<=5||day===0&&d.getHours()>=17&&d.getHours()<18.5)) advsB.push(termB);
+  const advA=advsA[(Math.floor(Date.now()/10000))%advsA.length];
+  const advB=advsB[(Math.floor(Date.now()/10000))%advsB.length];
+  setAdv(document.getElementById("advA"),advA);
+  setAdv(document.getElementById("advB"),advB);
+}
+
+function setAdv(el,msg){
+  el.textContent=msg;
+  const parent=el.parentElement;
+  if(el.scrollWidth>parent.clientWidth){
+    el.style.animation="scroll-left 12s linear infinite";
+  } else {el.style.animation="none";}
+}
+
+setInterval(()=>{
+  [aCounter,aCycle]=cycle("Inner",aCounter,document.getElementById("headA_left"),document.getElementById("headA_right"),aCycle);
+  [bCounter,bCycle]=cycle("Outer",bCounter,document.getElementById("headB_left"),document.getElementById("headB_right"),bCycle);
+  updateClock();
+  rotateAdvisories();
+},1000);
+
+</script>
 </body>
 </html>
