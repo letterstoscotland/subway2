@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Glasgow Subway Passenger Information Board</title>
+  <!-- Dot Matrix Font (CDN) -->
+  <link href="https://fonts.cdnfonts.com/css/dot-matrix" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="board-container">
+    <div class="subway-board">
+      <!-- Headline A -->
+      <div class="board-line headline" id="headlineA">
+        <span class="headline-left" id="headlineA-left"></span>
+        <span class="headline-right" id="headlineA-right"></span>
+      </div>
+      <!-- Advisory A -->
+      <div class="board-line advisory" id="advisoryA">
+        <span class="advisory-marquee" id="advisoryA-text"></span>
+      </div>
+      <!-- Headline B -->
+      <div class="board-line headline" id="headlineB">
+        <span class="headline-left" id="headlineB-left"></span>
+        <span class="headline-right" id="headlineB-right"></span>
+      </div>
+      <!-- Advisory B -->
+      <div class="board-line advisory" id="advisoryB">
+        <span class="advisory-marquee" id="advisoryB-text"></span>
+      </div>
+      <!-- Clock Line -->
+      <div class="board-line clock" id="clockLine">
+        <span id="clockText"></span>
+      </div>
+    </div>
+  </div>
+  <script src="js/board.js"></script>
+</body>
+</html>
