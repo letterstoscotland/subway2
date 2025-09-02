@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4:3 Box Test — 95% Width</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Box is always 95% of viewport width */
+    .wrap { width: 95vw; }
+
+    /* Keep exact 4:3 ratio */
+    .ratio-4x3 { position: relative; width: 100%; }
+    .ratio-4x3::before { content: ""; display: block; padding-top: 75%; }
+    .box { position: absolute; inset: 0; background: black; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="ratio-4x3">
+      <div class="box"></div>
+    </div>
+  </div>
+</body>
+</html>
