@@ -1,8 +1,0 @@
-{
-  "headlineCycleMinutes": 8,
-  "approachingSeconds": 10,
-  "advisoryRotationSeconds": 10,
-  "marqueeSpeedSeconds": 12,
-  "innerStartOffsetMinutes": 3,
-  "outerStartOffsetMinutes": 8
-}
