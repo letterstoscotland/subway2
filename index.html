@@ -4,39 +4,44 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Glasgow Subway Board</title>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Subway Board">
   <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:700&display=swap" rel="stylesheet">
+  <style>
+    .headline h1 {
+      font-family: 'Dot Matrix', 'Roboto Mono', Menlo, Consolas, ui-monospace, monospace;
+      font-size: 5vw;
+      color: #ffc84d;
+      white-space: nowrap;
+      overflow: visible;
+      text-shadow: 0 0 4px rgba(255,176,0,.45), 0 0 10px rgba(255,176,0,.28);
+      margin: 0;
+      padding: 0 1vw;
+    }
+    .panel.headline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    .board {
+      display: flex;
+      flex-direction: column;
+      gap: 2vw;
+      background: #000;
+      padding: 2vw;
+    }
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="ratio-4x3">
-      <div class="board">
-        <section class="panel headline">
-          <h1 class="line line-lg" id="headA_left">Inner next arrival</h1>
-          <h1 class="line line-lg" id="headA_right">8min</h1>
-        </section>
-        <div class="gap"></div>
-        <section class="panel advisory">
-          <div class="marquee"><div class="scroll"><span class="line line-sm" id="advA"></span></div></div>
-        </section>
-        <div class="gap"></div>
-        <section class="panel headline">
-          <h1 class="line line-lg" id="headB_left">Outer next arrival</h1>
-          <h1 class="line line-lg" id="headB_right">8min</h1>
-        </section>
-        <div class="gap"></div>
-        <section class="panel advisory">
-          <div class="marquee"><div class="scroll"><span class="line line-sm" id="advB"></span></div></div>
-        </section>
-        <div class="gap"></div>
-        <section class="panel time">
-          <span class="line line-sm" id="clock">Time Now --:--:--</span>
-        </section>
-      </div>
-    </div>
+  <div class="board">
+    <section class="panel headline">
+      <h1 id="headA_left">Inner next arrival</h1>
+      <h1 id="headA_right">8 min</h1>
+    </section>
+    <section class="panel headline">
+      <h1 id="headB_left">Outer next arrival</h1>
+      <h1 id="headB_right">8 min</h1>
+    </section>
   </div>
-  <script src="js/board.js"></script>
 </body>
 </html>
