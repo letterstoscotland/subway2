@@ -1,0 +1,12 @@
+{
+  "advisoriesBase": [
+    "Keep your belongings with you at all times",
+    "Please Mind the Gap",
+    "Report anything suspicious"
+  ],
+  "terminations": {
+    "inner": "NEXT INNER TERMINATES AT GOVAN",
+    "outer": "NEXT OUTER TERMINATES AT IBROX"
+  },
+  "football": "Football \u2013 system busy 1\u20136pm"
+}

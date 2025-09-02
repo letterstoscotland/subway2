@@ -1,0 +1,49 @@
+{
+  "timezone": "Europe/London",
+  "service": {
+    "mon_sat": {
+      "start": "06:30",
+      "lastApproach": "23:21",
+      "end": "23:30"
+    },
+    "sun": {
+      "start": "06:30",
+      "lastApproach": "18:21",
+      "end": "18:30"
+    }
+  },
+  "terminations": {
+    "weekday1": {
+      "days": "Mon-Fri",
+      "start": "09:15",
+      "end": "11:00"
+    },
+    "weekday2": {
+      "days": "Mon-Fri",
+      "start": "22:00",
+      "end": "23:20"
+    },
+    "sunday": {
+      "days": "Sun",
+      "start": "17:00",
+      "end": "18:30"
+    }
+  },
+  "football": {
+    "monthsInSeason": [
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May"
+    ],
+    "weekday": "Sat",
+    "start": "13:00",
+    "end": "18:00"
+  }
+}
