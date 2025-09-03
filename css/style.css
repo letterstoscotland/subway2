@@ -2,101 +2,89 @@ body {
   background: #000;
   margin: 0;
   padding: 0;
-  height: 100vh;
   width: 100vw;
+  height: 100vh;
   overflow: hidden;
-}
-
-.board-container {
-  width: 100vw;
-  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
 }
 
 .subway-board {
-  background: #000;
   aspect-ratio: 4 / 3;
   width: 90vw;
   max-width: 90vw;
   height: auto;
-  max-height: 90vh;
-  box-shadow: 0 0 16px #444;
+  background: #000;
+  box-shadow: 0 0 2vw #444;
   border-radius: 2vw;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 3vw 3vw;
+  padding: 2vw;
   box-sizing: border-box;
+  gap: 1.2vw; /* Reduced vertical gap between panels */
 }
 
-/* Board line styling */
-.board-line {
+/* Headline lines (next arrival) */
+.board-line.headline {
   width: 100%;
   display: flex;
   align-items: center;
-  min-height: 1em;
+  min-height: 5vw; /* More vertical space for headline panel */
   font-family: 'Dot Matrix', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   color: #ffd800;
-  text-shadow: 0 0 12px #ffd800, 0 0 28px #ffb000;
+  text-shadow: 0 0 1vw #ffd800, 0 0 2vw #ffb000;
   letter-spacing: 0.04em;
   font-weight: bold;
-  font-size: 3vw;
+  font-size: 5vw; /* Headlines are much bigger */
   overflow: hidden;
   white-space: nowrap;
-}
-
-/* Headline alignment */
-.headline {
-  justify-content: space-between;
-  font-size: 3.5vw;
+  margin-bottom: 0;
 }
 
 /* Headline left and right */
 .headline-left {
   flex: 1 1 0;
   text-align: left;
-  padding-right: 1vw;
+  padding-right: 2vw; /* ~3-4 character widths depending on font */
   overflow: hidden;
 }
 
 .headline-right {
   flex: 0 0 auto;
   text-align: right;
-  min-width: 6vw;
-  padding-left: 1vw;
+  min-width: 8vw;
+  padding-left: 2vw;
   font-variant-numeric: tabular-nums;
 }
 
-/* Advisory styling */
-.advisory {
-  font-size: 3vw;
-  font-weight: normal;
+/* Advisory lines */
+.board-line.advisory {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  min-height: 3vw;
+  font-family: 'Dot Matrix', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
+  color: #ffd800;
+  text-shadow: 0 0 0.5vw #ffd800, 0 0 1vw #ffb000;
   letter-spacing: 0.02em;
-  justify-content: flex-start;
-  position: relative;
-}
-
-/* Marquee effect for advisory (hidden by default, JS will animate) */
-.advisory-marquee {
-  display: inline-block;
+  font-weight: normal;
+  font-size: 2.3vw; /* Advisories are much smaller than headlines */
   overflow: hidden;
   white-space: nowrap;
-  will-change: transform;
+  margin-bottom: 0;
 }
 
-/* Clock line styling */
 .clock {
-  font-size: 2.5vw;
+  font-size: 2vw;
   justify-content: center;
   text-align: center;
   font-family: 'Dot Matrix', 'Roboto Mono', Menlo, Consolas, monospace;
   font-weight: bold;
   letter-spacing: 0.08em;
   color: #ffd800;
-  text-shadow: 0 0 12px #ffd800, 0 0 24px #ffb000;
+  text-shadow: 0 0 1vw #ffd800, 0 0 2vw #ffb000;
   margin-top: 1vw;
 }
 
