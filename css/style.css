@@ -11,6 +11,13 @@ body {
   justify-content: center;
 }
 
+@font-face {
+  font-family: 'DotMatrixBold';
+  src: url('fonts/DotMatrixBold.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
 /* Board scales to 95vw, never exceeds 95vh, always aspect ratio 4:3 */
 .subway-board {
   width: 95vw;
@@ -103,7 +110,7 @@ body {
 /* Headline style: maximize font size, allow gap between left/right */
 .headline {
   width: 100%;
-  font-family: 'Dot Matrix', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
+  font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: bold;
   color: #ffd800;
   text-shadow: 0 0 1vw #ffd800, 0 0 2vw #ffb000;
@@ -130,7 +137,7 @@ body {
 /* Advisory style: smaller font */
 .advisory {
   width: 100%;
-  font-family: 'Dot Matrix', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
+  font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: normal;
   color: #ffd800;
   text-shadow: 0 0 0.5vw #ffd800, 0 0 1vw #ffb000;
@@ -141,7 +148,7 @@ body {
 }
 
 .clock {
-  font-family: 'Dot Matrix', 'Roboto Mono', Menlo, Consolas, monospace;
+  font-family: 'DotMatrixBold', 'Roboto Mono', Menlo, Consolas, monospace;
   font-weight: bold;
   letter-spacing: 0.08em;
   color: #ffd800;
