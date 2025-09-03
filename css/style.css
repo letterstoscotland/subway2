@@ -193,12 +193,13 @@ body {
 /* --- SOFTER GLOW ON TOUCH DEVICES (MOBILE/TABLET) --- */
 @media (max-width: 900px) and (pointer: coarse) {
   .headline {
-    text-shadow: 0 0 2px #ffd800, 0 0 4px #ffb000; /* much softer */
+    /* Single, ultra-soft shadow for iPad/mobile. Adjust color for less intensity if desired. */
+    text-shadow: 0 0 1px #ffe066; /* use lighter yellow for less glow */
   }
   .advisory {
-    text-shadow: 0 0 1px #ffd800, 0 0 2px #ffb000; /* much softer */
+    text-shadow: 0 0 1px #ffe066;
   }
   .clock {
-    text-shadow: 0 0 1px #ffd800, 0 0 2px #ffb000; /* much softer */
+    text-shadow: 0 0 1px #ffe066;
   }
 }
