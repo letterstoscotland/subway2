@@ -193,12 +193,12 @@ body {
 /* --- SOFTER, BALANCED GLOW ON TOUCH DEVICES (MOBILE/TABLET) --- */
 @media (max-width: 900px) and (pointer: coarse) {
   .headline {
-    text-shadow: 0 0 0.25vw #ffe066, 0 0 0.5vw #ffd800;
+    text-shadow: 0 0 0.33vw #ffe066, 0 0 0.66vw #ffd800;
   }
   .advisory {
     text-shadow: 0 0 0.25vw #ffe066, 0 0 0.5vw #ffd800;
   }
   .clock {
-    text-shadow: 0 0 0.25vw #ffe066, 0 0 0.5vw #ffd800;
+    text-shadow: 0 0 0.18vw #ffe066, 0 0 0.36vw #ffd800;
   }
 }
