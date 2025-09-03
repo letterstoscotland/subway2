@@ -132,7 +132,7 @@ body {
   color: #ffd800;
   text-shadow: 0 0 1vw #ffd800, 0 0 2vw #ffb000;
   letter-spacing: 0.04em;
-  font-size: clamp(1.5vw, 6vh, 5vw); /* NEW: scales with window, never overlaps */
+  font-size: clamp(1.5vw, 6vh, 5vw); /* scales with window, never overlaps */
   white-space: nowrap;
   overflow: hidden;
   line-height: 1;
@@ -160,7 +160,7 @@ body {
   color: #ffd800;
   text-shadow: 0 0 0.5vw #ffd800, 0 0 1vw #ffb000;
   letter-spacing: 0.02em;
-  font-size: clamp(1vw, 3vh, 2vw); /* NEW: scales with window */
+  font-size: clamp(1vw, 3vh, 2vw); /* scales with window */
   white-space: nowrap;
   overflow: hidden;
   line-height: 1;
@@ -172,7 +172,7 @@ body {
   letter-spacing: 0.08em;
   color: #ffd800;
   text-shadow: 0 0 1vw #ffd800, 0 0 2vw #ffb000;
-  font-size: clamp(1vw, 3vh, 2vw); /* NEW: scales with window */
+  font-size: clamp(1vw, 3vh, 2vw); /* scales with window */
   white-space: nowrap;
   overflow: hidden;
   line-height: 1;
@@ -190,9 +190,15 @@ body {
   animation: flashing 1s steps(1, end) infinite;
 }
 
-/* NEW: Reduce headline glow on touch/mobile/tablet devices */
+/* --- SOFTER GLOW ON TOUCH DEVICES (MOBILE/TABLET) --- */
 @media (max-width: 900px) and (pointer: coarse) {
   .headline {
-    text-shadow: 0 0 0.5vw #ffd800, 0 0 1vw #ffb000;
+    text-shadow: 0 0 2px #ffd800, 0 0 4px #ffb000; /* much softer */
+  }
+  .advisory {
+    text-shadow: 0 0 1px #ffd800, 0 0 2px #ffb000; /* much softer */
+  }
+  .clock {
+    text-shadow: 0 0 1px #ffd800, 0 0 2px #ffb000; /* much softer */
   }
 }
