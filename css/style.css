@@ -1,8 +1,8 @@
 body {
-  background: #000; /* Remove white background, fill all */
+  background: #000;
   margin: 0;
   padding: 0;
-  height: 100vh; /* Fill viewport */
+  height: 100vh;
   width: 100vw;
   overflow: hidden;
 }
@@ -13,7 +13,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000; /* Remove white */
+  background: #000;
 }
 
 .subway-board {
@@ -43,7 +43,7 @@ body {
   text-shadow: 0 0 12px #ffd800, 0 0 28px #ffb000;
   letter-spacing: 0.04em;
   font-weight: bold;
-  font-size: 3vw; /* Lowered from 3.6vw */
+  font-size: 3vw;
   overflow: hidden;
   white-space: nowrap;
 }
@@ -51,8 +51,7 @@ body {
 /* Headline alignment */
 .headline {
   justify-content: space-between;
-  font-size: 3.5vw; /* Lowered from 4.2vw */
-  /* Removed text-transform: uppercase; */
+  font-size: 3.5vw;
 }
 
 /* Headline left and right */
@@ -90,7 +89,7 @@ body {
 
 /* Clock line styling */
 .clock {
-  font-size: 2.5vw; /* Lowered for more fit */
+  font-size: 2.5vw;
   justify-content: center;
   text-align: center;
   font-family: 'Dot Matrix', 'Roboto Mono', Menlo, Consolas, monospace;
@@ -104,10 +103,10 @@ body {
 /* Flashing effect for 'APPROACHING' */
 @keyframes flashing {
   0% { opacity: 1; }
-  50% { opacity: 0.2; }
+  50% { opacity: 0; }
   100% { opacity: 1; }
 }
 
 .flashing {
-  animation: flashing 0.8s linear infinite;
+  animation: flashing 1s linear infinite;
 }
