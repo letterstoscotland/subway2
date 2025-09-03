@@ -130,9 +130,9 @@ body {
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: bold;
   color: #ffd800;
-  text-shadow: 0 0 0.6vw #ffd800, 0 0 1.3vw #ffb000;
+  text-shadow: 0 0 12px #ffd800, 0 0 28px #ffb000; /* px units, works everywhere */
   letter-spacing: 0.04em;
-  font-size: clamp(1.5vw, 6vh, 5vw); /* scales with window, never overlaps */
+  font-size: clamp(1.5vw, 6vh, 5vw);
   white-space: nowrap;
   overflow: hidden;
   line-height: 1;
@@ -141,7 +141,7 @@ body {
 .headline-left {
   flex: 1 1 0;
   text-align: left;
-  padding-right: 3vw; /* ~3-4 character widths, scales with vw */
+  padding-right: 3vw;
   overflow: hidden;
 }
 .headline-right {
@@ -158,9 +158,9 @@ body {
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: normal;
   color: #ffd800;
-  text-shadow: 0 0 0.45vw #ffd800, 0 0 0.9vw #ffb000;
+  text-shadow: 0 0 12px #ffd800, 0 0 28px #ffb000; /* px units, matches headline */
   letter-spacing: 0.02em;
-  font-size: clamp(1vw, 3vh, 2vw); /* scales with window */
+  font-size: clamp(1vw, 3vh, 2vw);
   white-space: nowrap;
   overflow: hidden;
   line-height: 1;
@@ -171,8 +171,8 @@ body {
   font-weight: bold;
   letter-spacing: 0.08em;
   color: #ffd800;
-  text-shadow: 0 0 0.3vw #ffd800, 0 0 0.7vw #ffb000;
-  font-size: clamp(1vw, 3vh, 2vw); /* scales with window */
+  text-shadow: 0 0 12px #ffd800, 0 0 28px #ffb000; /* px units, matches headline/advisory */
+  font-size: clamp(1vw, 3vh, 2vw);
   white-space: nowrap;
   overflow: hidden;
   line-height: 1;
@@ -188,20 +188,4 @@ body {
 }
 .flashing {
   animation: flashing 1s steps(1, end) infinite;
-}
-
-/* --- SOFTEST, BALANCED GLOW ON TOUCH DEVICES (MOBILE/TABLET) --- */
-@media (max-width: 900px) and (pointer: coarse) {
-  /* Use more specific selectors and !important for guaranteed override */
-  .headlineA .headline,
-  .headlineB .headline {
-    text-shadow: 0 0 0.22vw #ffe066 !important;
-  }
-  .advisoryA .advisory,
-  .advisoryB .advisory {
-    text-shadow: 0 0 0.18vw #ffe066 !important;
-  }
-  .clock {
-    text-shadow: 0 0 0.13vw #ffe066 !important;
-  }
 }
