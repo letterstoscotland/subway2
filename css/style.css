@@ -190,15 +190,18 @@ body {
   animation: flashing 1s steps(1, end) infinite;
 }
 
-/* --- SOFTER, BALANCED GLOW ON TOUCH DEVICES (MOBILE/TABLET) --- */
+/* --- SOFTEST, BALANCED GLOW ON TOUCH DEVICES (MOBILE/TABLET) --- */
 @media (max-width: 900px) and (pointer: coarse) {
-  .headline {
-    text-shadow: 0 0 0.33vw #ffe066, 0 0 0.66vw #ffd800;
+  /* Use more specific selectors and !important for guaranteed override */
+  .headlineA .headline,
+  .headlineB .headline {
+    text-shadow: 0 0 0.22vw #ffe066 !important;
   }
-  .advisory {
-    text-shadow: 0 0 0.25vw #ffe066, 0 0 0.5vw #ffd800;
+  .advisoryA .advisory,
+  .advisoryB .advisory {
+    text-shadow: 0 0 0.18vw #ffe066 !important;
   }
   .clock {
-    text-shadow: 0 0 0.18vw #ffe066, 0 0 0.36vw #ffd800;
+    text-shadow: 0 0 0.13vw #ffe066 !important;
   }
 }
