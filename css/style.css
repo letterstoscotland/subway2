@@ -18,124 +18,56 @@ body {
 }
 
 .subway-board {
+  /* Aspect ratio box for robust 4:3 scaling */
   aspect-ratio: 4 / 3;
   width: 100vw;
-  height: 75vw;
   max-width: 100vw;
+  height: auto;
   max-height: 100vh;
   background: #000;
   box-shadow: 0 0 2vw #444;
   border-radius: 1vw;
-  display: grid;
-  grid-template-rows:
-    8.3fr   /* top buffer (30px/270px) */
-    14.8fr  /* headline A (40px) */
-    3.7fr   /* gap10 (10px) */
-    7.4fr   /* advisory A (20px) */
-    7.4fr   /* gap20 (20px) */
-    14.8fr  /* headline B */
-    3.7fr   /* gap10 */
-    7.4fr   /* advisory B */
-    7.4fr   /* gap20 */
-    7.4fr   /* clock (20px) */
-    14.8fr; /* bottom buffer (40px) */
-  grid-template-columns: 2.8fr 94.4fr 2.8fr; /* side buffers */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Even vertical spacing */
+  align-items: stretch;
+  padding: 3vw 3vw;
   box-sizing: border-box;
-  padding: 0;
   overflow: hidden;
 }
 
-@media (min-aspect-ratio: 4/3) {
-  .subway-board {
-    height: 100vh;
-    width: 133.333vh;
-    max-width: 100vw;
-    max-height: 100vh;
-  }
-}
-
-@media (max-aspect-ratio: 4/3) {
-  .subway-board {
-    width: 100vw;
-    height: 75vw;
-    max-width: 100vw;
-    max-height: 100vh;
-  }
-}
-
-.buffer-top {
-  grid-row: 1;
-  grid-column: 2;
-}
-.headlineA {
-  grid-row: 2;
-  grid-column: 2;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-.gap10a {
-  grid-row: 3;
-  grid-column: 2;
-}
-.advisoryA {
-  grid-row: 4;
-  grid-column: 2;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-.gap20a {
-  grid-row: 5;
-  grid-column: 2;
-}
-.headlineB {
-  grid-row: 6;
-  grid-column: 2;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-.gap10b {
-  grid-row: 7;
-  grid-column: 2;
-}
-.advisoryB {
-  grid-row: 8;
-  grid-column: 2;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-.gap20b {
-  grid-row: 9;
-  grid-column: 2;
-}
-.clock {
-  grid-row: 10;
-  grid-column: 2;
-  height: 100%;
+/* Panels vertically spaced, centered */
+.buffer-top,
+.headlineA,
+.gap10a,
+.advisoryA,
+.gap20a,
+.headlineB,
+.gap10b,
+.advisoryB,
+.gap20b,
+.clock,
+.buffer-bottom {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.buffer-bottom {
-  grid-row: 11;
-  grid-column: 2;
-}
 
 /* Headline style: maximize font size, allow gap between left/right */
 .headline {
-  width: 100%;
+  width: max-content;
+  margin: 0 auto;
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: bold;
   color: #ffd800;
-  text-shadow: 0 0 12px #ffd800, 0 0 28px #ffb000; /* px units, works everywhere */
+  text-shadow: 0 0 12px #ffd800, 0 0 28px #ffb000; /* px units, consistent everywhere */
   letter-spacing: 0.04em;
   font-size: clamp(1.5vw, 6vh, 5vw);
   white-space: nowrap;
   overflow: hidden;
   line-height: 1;
+  display: flex;
 }
 
 .headline-left {
@@ -154,7 +86,8 @@ body {
 
 /* Advisory style: smaller font */
 .advisory {
-  width: 100%;
+  width: max-content;
+  margin: 0 auto;
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: normal;
   color: #ffd800;
@@ -164,9 +97,13 @@ body {
   white-space: nowrap;
   overflow: hidden;
   line-height: 1;
+  display: flex;
 }
 
+/* Clock style */
 .clock {
+  width: max-content;
+  margin: 0 auto;
   font-family: 'DotMatrixBold', 'Roboto Mono', Menlo, Consolas, monospace;
   font-weight: bold;
   letter-spacing: 0.08em;
@@ -176,6 +113,8 @@ body {
   white-space: nowrap;
   overflow: hidden;
   line-height: 1;
+  display: flex;
+  justify-content: center;
 }
 
 /* Flashing effect for 'APPROACHING' */
