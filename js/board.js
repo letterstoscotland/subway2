@@ -6,7 +6,7 @@ const SUBWAY_CONFIG = {
     0: [6.5, 18.5],    // Sunday: 06:30 - 18:30
     1: [6.5, 23.5],    // Monday
     2: [6.5, 23.5],    // Tuesday
-    3: [0.0, 23.5],    // Wednesday
+    3: [1.0, 23.5],    // Wednesday
     4: [6.5, 23.5],    // Thursday
     5: [6.5, 23.5],    // Friday
     6: [6.5, 23.5],    // Saturday
