@@ -79,13 +79,20 @@ const SUBWAY_CONFIG = {
 
 // --- UTILITY FUNCTIONS --- //
 function getUKTime() {
-  // Use browser's Intl API if available, fallback to UTC
-  const now = new Date();
-  try {
-    return new Date(now.toLocaleString("en-GB", { timeZone: SUBWAY_CONFIG.timeZone }));
-  } catch {
-    return now;
-  }
+  // Use Intl.DateTimeFormat for proper timezone handling
+  const fmt = new Intl.DateTimeFormat('en-GB', {
+    timeZone: SUBWAY_CONFIG.timeZone,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  });
+  const parts = fmt.formatToParts(new Date());
+  const obj = {};
+  parts.forEach(p => { obj[p.type] = p.value; });
+  // Compose a date string in ISO format
+  return new Date(
+    `${obj.year}-${obj.month}-${obj.day}T${obj.hour}:${obj.minute}:${obj.second}`
+  );
 }
 
 function pad(num, len = 2) {
@@ -306,7 +313,7 @@ class SubwayBoard {
     }, 50);
   }
 }
-
+console.log("DEBUG UK time:", getUKTime());
 // --- INITIALIZE --- //
 window.addEventListener("DOMContentLoaded", () => {
   new SubwayBoard(SUBWAY_CONFIG);
