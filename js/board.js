@@ -6,11 +6,10 @@ const SUBWAY_CONFIG = {
     0: [6.5, 18.5],    // Sunday: 06:30 - 18:30
     1: [6.5, 23.5],    // Monday
     2: [6.5, 23.5],    // Tuesday
-    3: [1.0, 23.5],    // Wednesday
+    3: [0.5, 23.5],    // Wednesday
     4: [6.5, 23.5],    // Thursday
     5: [6.5, 23.5],    // Friday
     6: [6.5, 23.5],    // Saturday
-    // End of service for display logic: final approach at 18:21/23:21
     endTimes: {
       0: [18, 21],     // Sunday
       1: [23, 21],     // Monday
@@ -72,14 +71,13 @@ const SUBWAY_CONFIG = {
     ]
   },
   advisoryCycleSeconds: 25,
-  advisoryBlankSeconds: 25,
   marqueeSpeed: 60, // px/sec
   approachingFlash: true
 };
 
 // --- UTILITY FUNCTIONS --- //
 function getUKTime() {
-  // Use Intl.DateTimeFormat for proper timezone handling
+  // Always get current time in Europe/London
   const fmt = new Intl.DateTimeFormat('en-GB', {
     timeZone: SUBWAY_CONFIG.timeZone,
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -110,8 +108,6 @@ class SubwayBoard {
     // Advisory state
     this.advisoryAIndex = 0;
     this.advisoryBIndex = 1; // Start offset so both advisories not same
-    this.advisoryABlank = false;
-    this.advisoryBBlank = true;
     this.lastAdvisoryAChange = 0;
     this.lastAdvisoryBChange = 0;
     // DOM elements
@@ -124,6 +120,11 @@ class SubwayBoard {
       advisoryB: document.getElementById("advisoryB-text"),
       clock: document.getElementById("clockText")
     };
+    // For flashing logic
+    this.innerIsApproaching = false;
+    this.outerIsApproaching = false;
+    this.innerApproachStart = null;
+    this.outerApproachStart = null;
     this.start();
   }
   
@@ -161,37 +162,65 @@ class SubwayBoard {
   }
 
   updateHeadlines(now) {
-    // Determine headline message and time
+    // Strict countdown calculation: always progress 8,7,6,...1,APPROACHING
     let innerMsg, outerMsg;
     let flashingA = false, flashingB = false;
 
     if (!this.isOperating(now) || this.isServiceTerminated(now, true)) {
       innerMsg = this.config.headlines.inner[9];
       outerMsg = this.config.headlines.outer[9];
+      this.innerIsApproaching = false;
+      this.outerIsApproaching = false;
+      this.innerApproachStart = null;
+      this.outerApproachStart = null;
     } else {
-      // Calculate remaining minutes until next train for each
+      // Calculate minutes and seconds for each circle, unsynchronized
       const secondsToday = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
 
-      // Inner offset
-      let innerCycleStart = ((secondsToday / 60 - this.innerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
-      let innerMin = this.cycleMinutes - Math.floor(innerCycleStart);
-      let innerSec = 60 - (secondsToday % 60);
-      if (innerMin === 0 && innerSec <= 10) {
-        innerMsg = this.config.headlines.inner[8]; // "INNER APPROACHING"
+      // INNER
+      let innerCyclePosition = ((secondsToday / 60 - this.innerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
+      let innerMinRemain = this.cycleMinutes - Math.floor(innerCyclePosition);
+      let innerSecRemain = 60 - (secondsToday % 60);
+
+      // OUTER
+      let outerCyclePosition = ((secondsToday / 60 - this.outerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
+      let outerMinRemain = this.cycleMinutes - Math.floor(outerCyclePosition);
+      let outerSecRemain = 60 - (secondsToday % 60);
+
+      // Strict order: index = 8 - (minutes remaining - 1), so 8min = index 0, 7min = index 1, ..., 1min = index 7, APPROACHING = index 8
+      // For "APPROACHING": if innerMinRemain === 1 and innerSecRemain <= 10
+      // Show "APPROACHING" for exactly 10 seconds, then reset
+      // INNER
+      if (innerMinRemain === 1 && innerSecRemain <= 10) {
+        innerMsg = this.config.headlines.inner[8];
         flashingA = this.config.approachingFlash;
+        if (!this.innerIsApproaching) {
+          this.innerApproachStart = Date.now();
+        }
+        this.innerIsApproaching = true;
       } else {
-        innerMsg = this.config.headlines.inner[Math.max(0, Math.min(8, innerMin))];
+        // Find headline index: 8min = 0, 7min = 1, ..., 1min = 7
+        let index = Math.max(0, Math.min(7, this.cycleMinutes - innerMinRemain));
+        innerMsg = this.config.headlines.inner[index];
+        flashingA = false;
+        this.innerIsApproaching = false;
+        this.innerApproachStart = null;
       }
 
-      // Outer offset
-      let outerCycleStart = ((secondsToday / 60 - this.outerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
-      let outerMin = this.cycleMinutes - Math.floor(outerCycleStart);
-      let outerSec = 60 - (secondsToday % 60);
-      if (outerMin === 0 && outerSec <= 10) {
-        outerMsg = this.config.headlines.outer[8]; // "OUTER APPROACHING"
+      // OUTER
+      if (outerMinRemain === 1 && outerSecRemain <= 10) {
+        outerMsg = this.config.headlines.outer[8];
         flashingB = this.config.approachingFlash;
+        if (!this.outerIsApproaching) {
+          this.outerApproachStart = Date.now();
+        }
+        this.outerIsApproaching = true;
       } else {
-        outerMsg = this.config.headlines.outer[Math.max(0, Math.min(8, outerMin))];
+        let index = Math.max(0, Math.min(7, this.cycleMinutes - outerMinRemain));
+        outerMsg = this.config.headlines.outer[index];
+        flashingB = false;
+        this.outerIsApproaching = false;
+        this.outerApproachStart = null;
       }
     }
 
@@ -206,19 +235,21 @@ class SubwayBoard {
     if (msg.endsWith("APPROACHING") || msg.endsWith("terminated")) {
       leftEl.textContent = msg;
       rightEl.textContent = "";
+      leftEl.classList.toggle("flashing", flashing);
+      rightEl.classList.remove("flashing");
     } else {
       let match = msg.match(/^(.+?)(\d+min)$/);
       if (match) {
         leftEl.textContent = match[1].trim();
         rightEl.textContent = match[2];
+        leftEl.classList.remove("flashing");
+        rightEl.classList.remove("flashing");
       } else {
         leftEl.textContent = msg;
         rightEl.textContent = "";
+        leftEl.classList.remove("flashing");
+        rightEl.classList.remove("flashing");
       }
-    }
-    [leftEl, rightEl].forEach(el => el.classList.remove("flashing"));
-    if (flashing) {
-      leftEl.classList.add("flashing");
     }
   }
 
@@ -263,42 +294,30 @@ class SubwayBoard {
     }
 
     // Rotation logic, offset so they're not in sync
-    if (!this.lastAdvisoryAChange || performance.now() - this.lastAdvisoryAChange > (this.config.advisoryCycleSeconds + this.config.advisoryBlankSeconds)*1000) {
+    // Remove blank interval: always show a message
+    const nowMs = Date.now();
+    if (!this.lastAdvisoryAChange || (nowMs - this.lastAdvisoryAChange) > this.config.advisoryCycleSeconds * 1000) {
       this.advisoryAIndex = (this.advisoryAIndex + 1) % advisoryAMessages.length;
-      this.lastAdvisoryAChange = performance.now();
-      this.advisoryABlank = false;
+      this.lastAdvisoryAChange = nowMs;
     }
-    if (!this.lastAdvisoryBChange || performance.now() - this.lastAdvisoryBChange > (this.config.advisoryCycleSeconds + this.config.advisoryBlankSeconds)*1000) {
+    if (!this.lastAdvisoryBChange || (nowMs - this.lastAdvisoryBChange) > this.config.advisoryCycleSeconds * 1000) {
       this.advisoryBIndex = (this.advisoryBIndex + 1) % advisoryBMessages.length;
-      this.lastAdvisoryBChange = performance.now() + this.config.advisoryCycleSeconds*500; // start offset
-      this.advisoryBBlank = false;
+      this.lastAdvisoryBChange = nowMs + this.config.advisoryCycleSeconds * 500; // start offset
     }
 
-    // After cycleSeconds, blank; then next message
-    if (performance.now() - this.lastAdvisoryAChange > this.config.advisoryCycleSeconds*1000) {
-      this.el.advisoryA.textContent = "";
-      this.advisoryABlank = true;
-    } else {
-      this.showAdvisory(this.el.advisoryA, advisoryAMessages[this.advisoryAIndex]);
-    }
-    if (performance.now() - this.lastAdvisoryBChange > this.config.advisoryCycleSeconds*1000) {
-      this.el.advisoryB.textContent = "";
-      this.advisoryBBlank = true;
-    } else {
-      this.showAdvisory(this.el.advisoryB, advisoryBMessages[this.advisoryBIndex]);
-    }
+    // Always show a message, never blank
+    this.showAdvisory(this.el.advisoryA, advisoryAMessages[this.advisoryAIndex]);
+    this.showAdvisory(this.el.advisoryB, advisoryBMessages[this.advisoryBIndex]);
   }
 
   showAdvisory(el, msg) {
-    // If too long, marquee
     el.classList.remove("marqueeing");
     el.style.transform = "";
     el.textContent = msg;
-    // Measure text width
+
     setTimeout(() => {
       const parent = el.parentNode;
       if (el.scrollWidth > parent.offsetWidth) {
-        // Marquee!
         el.classList.add("marqueeing");
         let duration = (el.scrollWidth + parent.offsetWidth) / this.config.marqueeSpeed;
         el.animate([
@@ -313,7 +332,7 @@ class SubwayBoard {
     }, 50);
   }
 }
-console.log("DEBUG UK time:", getUKTime());
+
 // --- INITIALIZE --- //
 window.addEventListener("DOMContentLoaded", () => {
   new SubwayBoard(SUBWAY_CONFIG);
