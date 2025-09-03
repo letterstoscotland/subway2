@@ -130,7 +130,7 @@ body {
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: bold;
   color: #ffd800;
-  text-shadow: 0 0 1vw #ffd800, 0 0 2vw #ffb000;
+  text-shadow: 0 0 0.6vw #ffd800, 0 0 1.3vw #ffb000;
   letter-spacing: 0.04em;
   font-size: clamp(1.5vw, 6vh, 5vw); /* scales with window, never overlaps */
   white-space: nowrap;
@@ -158,7 +158,7 @@ body {
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: normal;
   color: #ffd800;
-  text-shadow: 0 0 0.5vw #ffd800, 0 0 1vw #ffb000;
+  text-shadow: 0 0 0.45vw #ffd800, 0 0 0.9vw #ffb000;
   letter-spacing: 0.02em;
   font-size: clamp(1vw, 3vh, 2vw); /* scales with window */
   white-space: nowrap;
@@ -171,7 +171,7 @@ body {
   font-weight: bold;
   letter-spacing: 0.08em;
   color: #ffd800;
-  text-shadow: 0 0 1vw #ffd800, 0 0 2vw #ffb000;
+  text-shadow: 0 0 0.3vw #ffd800, 0 0 0.7vw #ffb000;
   font-size: clamp(1vw, 3vh, 2vw); /* scales with window */
   white-space: nowrap;
   overflow: hidden;
@@ -190,16 +190,15 @@ body {
   animation: flashing 1s steps(1, end) infinite;
 }
 
-/* --- SOFTER GLOW ON TOUCH DEVICES (MOBILE/TABLET) --- */
+/* --- SOFTER, BALANCED GLOW ON TOUCH DEVICES (MOBILE/TABLET) --- */
 @media (max-width: 900px) and (pointer: coarse) {
   .headline {
-    /* Single, ultra-soft shadow for iPad/mobile. Adjust color for less intensity if desired. */
-    text-shadow: 0 0 1px #ffe066; /* use lighter yellow for less glow */
+    text-shadow: 0 0 0.33vw #ffe066, 0 0 0.66vw #ffd800;
   }
   .advisory {
-    text-shadow: 0 0 1px #ffe066;
+    text-shadow: 0 0 0.25vw #ffe066, 0 0 0.5vw #ffd800;
   }
   .clock {
-    text-shadow: 0 0 1px #ffe066;
+    text-shadow: 0 0 0.18vw #ffe066, 0 0 0.36vw #ffd800;
   }
 }
