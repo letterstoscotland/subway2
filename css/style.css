@@ -103,10 +103,11 @@ body {
 /* Flashing effect for 'APPROACHING' */
 @keyframes flashing {
   0% { opacity: 1; }
+  49% { opacity: 1; }
   50% { opacity: 0; }
+  99% { opacity: 0; }
   100% { opacity: 1; }
 }
-
 .flashing {
-  animation: flashing 1s linear infinite;
+  animation: flashing 1s steps(1, end) infinite;
 }
