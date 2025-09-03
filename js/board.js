@@ -31,7 +31,8 @@ const SUBWAY_CONFIG = {
       "Inner next arrival 2min",
       "Inner next arrival 1min",
       "INNER APPROACHING",
-      "Inner service terminated"
+      // CHANGED: removed "Inner service terminated"
+      // Now handled in updateHeadlines for first service message
     ],
     outer: [
       "Outer next arrival 8min",
@@ -43,7 +44,8 @@ const SUBWAY_CONFIG = {
       "Outer next arrival 2min",
       "Outer next arrival 1min",
       "OUTER APPROACHING",
-      "Outer service terminated"
+      // CHANGED: removed "Outer service terminated"
+      // Now handled in updateHeadlines for first service message
     ]
   },
   advisories: {
@@ -157,25 +159,44 @@ class SubwayBoard {
     return hours >= endTime;
   }
 
+  isFirstService(now) {
+    // Returns true if within first service period (after startup, before first train arrives)
+    const hour = now.getHours();
+    const min = now.getMinutes();
+    // Service always starts at 06:30
+    if (hour === 6 && min >= 30 && min < 33) return "inner";
+    if (hour === 6 && min >= 30 && min < 38) return "outer";
+    return false;
+  }
+
   updateClock(now) {
     this.el.clock.textContent = `Time Now ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
   }
 
   updateHeadlines(now) {
-    // Strict countdown calculation: always progress 8,7,6,...1,APPROACHING
     let innerMsg, outerMsg;
     let flashingA = false, flashingB = false;
 
-    if (!this.isOperating(now) || this.isServiceTerminated(now, true)) {
-      innerMsg = this.config.headlines.inner[9];
-      outerMsg = this.config.headlines.outer[9];
-      this.innerIsApproaching = false;
-      this.outerIsApproaching = false;
-      this.innerApproachStart = null;
-      this.outerApproachStart = null;
+    // Show special "First [line] due XXXX" when just after service start
+    const hour = now.getHours();
+    const min = now.getMinutes();
+
+    const isOperating = this.isOperating(now);
+    const isTerminated = this.isServiceTerminated(now);
+    const firstServiceInner = (hour === 6 && min >= 30 && min < 33);
+    const firstServiceOuter = (hour === 6 && min >= 30 && min < 38);
+
+    if (!isOperating || isTerminated) {
+      // Service terminated: show blank or "Service terminated" (no next arrivals)
+      innerMsg = "First inner due 0633";
+      outerMsg = "First outer due 0638";
+    } else if (firstServiceInner || firstServiceOuter) {
+      // Show "First inner due 0633" and "First outer due 0638" after service starts
+      innerMsg = "First inner due 0633";
+      outerMsg = "First outer due 0638";
     } else {
-      // Calculate minutes and seconds for each circle, unsynchronized
-      const secondsToday = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
+      // Normal countdown calculation: always progress 8,7,6,...1,APPROACHING
+      const secondsToday = hour*3600 + min*60 + now.getSeconds();
 
       // INNER
       let innerCyclePosition = ((secondsToday / 60 - this.innerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
@@ -232,7 +253,11 @@ class SubwayBoard {
   setHeadlineSplit(leftEl, rightEl, msg, flashing=false) {
     // Find last space before number/min/APPROACHING
     let splitIndex = msg.lastIndexOf(" ");
-    if (msg.endsWith("APPROACHING") || msg.endsWith("terminated")) {
+    if (
+      msg.endsWith("APPROACHING") ||
+      msg.startsWith("First inner due") ||
+      msg.startsWith("First outer due")
+    ) {
       leftEl.textContent = msg;
       rightEl.textContent = "";
       leftEl.classList.toggle("flashing", flashing);
@@ -254,61 +279,66 @@ class SubwayBoard {
   }
 
   // --- ADVISORY LOGIC --- //
-updateAdvisories(now) {
-  const day = now.getDay();
-  const hour = now.getHours();
-  const min = now.getMinutes();
-  const month = now.getMonth();
-  const isFootballSeason = (month >= 7 && month <= 10) || (month === 11 && hour < 18); // Aug-May, not Dec
-  const isService = this.isOperating(now) && !this.isServiceTerminated(now);
+  updateAdvisories(now) {
+    const day = now.getDay();
+    const hour = now.getHours();
+    const min = now.getMinutes();
+    const month = now.getMonth();
 
-  let advisoryAMessages = [...this.config.advisories.base];
-  let advisoryBMessages = [...this.config.advisories.base];
+    const isFootballSeason = (month >= 7 && month <= 10) || (month === 11 && hour < 18); // Aug-May, not Dec
+    const isOperating = this.isOperating(now);
+    const isTerminated = this.isServiceTerminated(now);
+    const firstServiceInner = (hour === 6 && min >= 30 && min < 33);
+    const firstServiceOuter = (hour === 6 && min >= 30 && min < 38);
 
-  // Football busy message
-  if (
-    isFootballSeason &&
-    day === 6 &&
-    hour >= 6 && hour < 18
-  ) {
-    advisoryAMessages.push("Football- system busy 1-6pm");
-    advisoryBMessages.push("Football- system busy 1-6pm");
-  }
+    let advisoryAMessages = [...this.config.advisories.base];
+    let advisoryBMessages = [...this.config.advisories.base];
 
-  // Termination messages
-  if (
-    (hour >= 9 && hour < 11) ||
-    (day !== 0 && hour >= 22 && hour < 23) ||
-    (day === 0 && hour >= 17 && hour < 18)
-  ) {
-    advisoryAMessages.push("NEXT INNER TERMINATES AT GOVAN");
-    advisoryBMessages.push("NEXT OUTER TERMINATES AT IBROX");
-  }
-
-  if (!isService) {
-    this.el.advisoryA.textContent = "";
-    this.el.advisoryB.textContent = "";
-    return;
-  }
-
-  // Advisory cycling: never both the same message
-  const nowMs = Date.now();
-  if (!this.lastAdvisoryAChange || (nowMs - this.lastAdvisoryAChange) > this.config.advisoryCycleSeconds * 1000) {
-    this.advisoryAIndex = (this.advisoryAIndex + 1) % advisoryAMessages.length;
-    this.lastAdvisoryAChange = nowMs;
-    
-    // For B: advance to next message that's not equal to A
-    let nextB = (this.advisoryBIndex + 1) % advisoryBMessages.length;
-    if (advisoryBMessages[nextB] === advisoryAMessages[this.advisoryAIndex]) {
-      nextB = (nextB + 1) % advisoryBMessages.length;
+    // Football busy message
+    if (
+      isFootballSeason &&
+      day === 6 &&
+      hour >= 6 && hour < 18
+    ) {
+      advisoryAMessages.push("Football- system busy 1-6pm");
+      advisoryBMessages.push("Football- system busy 1-6pm");
     }
-    this.advisoryBIndex = nextB;
-    this.lastAdvisoryBChange = nowMs + this.config.advisoryCycleSeconds * 500; // stagger
-  }
 
-  this.showAdvisory(this.el.advisoryA, advisoryAMessages[this.advisoryAIndex]);
-  this.showAdvisory(this.el.advisoryB, advisoryBMessages[this.advisoryBIndex]);
-}
+    // Termination messages
+    if (
+      (hour >= 9 && hour < 11) ||
+      (day !== 0 && hour >= 22 && hour < 23) ||
+      (day === 0 && hour >= 17 && hour < 18)
+    ) {
+      advisoryAMessages.push("NEXT INNER TERMINATES AT GOVAN");
+      advisoryBMessages.push("NEXT OUTER TERMINATES AT IBROX");
+    }
+
+    // Show special advisory during first service period or termination
+    if (!isOperating || isTerminated || firstServiceInner || firstServiceOuter) {
+      this.el.advisoryA.textContent = "Inner service terminated";
+      this.el.advisoryB.textContent = "Outer service terminated";
+      return;
+    }
+
+    // Advisory cycling: never both the same message
+    const nowMs = Date.now();
+    if (!this.lastAdvisoryAChange || (nowMs - this.lastAdvisoryAChange) > this.config.advisoryCycleSeconds * 1000) {
+      this.advisoryAIndex = (this.advisoryAIndex + 1) % advisoryAMessages.length;
+      this.lastAdvisoryAChange = nowMs;
+      
+      // For B: advance to next message that's not equal to A
+      let nextB = (this.advisoryBIndex + 1) % advisoryBMessages.length;
+      if (advisoryBMessages[nextB] === advisoryAMessages[this.advisoryAIndex]) {
+        nextB = (nextB + 1) % advisoryBMessages.length;
+      }
+      this.advisoryBIndex = nextB;
+      this.lastAdvisoryBChange = nowMs + this.config.advisoryCycleSeconds * 500; // stagger
+    }
+
+    this.showAdvisory(this.el.advisoryA, advisoryAMessages[this.advisoryAIndex]);
+    this.showAdvisory(this.el.advisoryB, advisoryBMessages[this.advisoryBIndex]);
+  }
 
   showAdvisory(el, msg) {
     el.classList.remove("marqueeing");
