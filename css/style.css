@@ -132,9 +132,10 @@ body {
   color: #ffd800;
   text-shadow: 0 0 1vw #ffd800, 0 0 2vw #ffb000;
   letter-spacing: 0.04em;
-  font-size: 2.3vw; /* Scales with board width, matches physical 40px at 400px wide */
+  font-size: clamp(1.5vw, 6vh, 5vw); /* NEW: scales with window, never overlaps */
   white-space: nowrap;
   overflow: hidden;
+  line-height: 1;
 }
 
 .headline-left {
@@ -159,9 +160,10 @@ body {
   color: #ffd800;
   text-shadow: 0 0 0.5vw #ffd800, 0 0 1vw #ffb000;
   letter-spacing: 0.02em;
-  font-size: 1.15vw; /* Scales with physical 20px at 400px wide */
+  font-size: clamp(1vw, 3vh, 2vw); /* NEW: scales with window */
   white-space: nowrap;
   overflow: hidden;
+  line-height: 1;
 }
 
 .clock {
@@ -170,9 +172,10 @@ body {
   letter-spacing: 0.08em;
   color: #ffd800;
   text-shadow: 0 0 1vw #ffd800, 0 0 2vw #ffb000;
-  font-size: 1.15vw;
+  font-size: clamp(1vw, 3vh, 2vw); /* NEW: scales with window */
   white-space: nowrap;
   overflow: hidden;
+  line-height: 1;
 }
 
 /* Flashing effect for 'APPROACHING' */
@@ -185,4 +188,11 @@ body {
 }
 .flashing {
   animation: flashing 1s steps(1, end) infinite;
+}
+
+/* NEW: Reduce headline glow on touch/mobile/tablet devices */
+@media (max-width: 900px) and (pointer: coarse) {
+  .headline {
+    text-shadow: 0 0 0.5vw #ffd800, 0 0 1vw #ffb000;
+  }
 }
