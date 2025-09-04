@@ -11,8 +11,8 @@ body {
 }
 
 @font-face {
-  font-family: 'MMI 5x7e';
-  src: url('fonts/mmi-5x7e.otf') format('opentype');
+  font-family: 'Eggcrate Display Sans';
+  src: url('fonts/eggcrate-display-sans.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -125,10 +125,10 @@ body {
   grid-column: 2;
 }
 
-/* Headline style: single span, dot matrix, monospaced, pre-formatted */
+/* Headline style: single span, eggcrate, monospaced, pre-formatted */
 .headline-text {
   width: 100%;
-  font-family: 'MMI 5x7e', monospace;
+  font-family: 'Eggcrate Display Sans', monospace;
   font-weight: 400;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
@@ -137,7 +137,7 @@ body {
   text-shadow: 0 0 12px #ffd800, 0 0 28px #ffb000;
   letter-spacing: 0.04em;
   font-size: clamp(1.5vw, 6vh, 5vw);
-  white-space: pre; /* preserve spaces for consistent gap */
+  white-space: pre;
   overflow: hidden;
   line-height: 1;
   text-align: left;
@@ -146,7 +146,7 @@ body {
 /* Advisory style: smaller font */
 .advisory {
   width: 100%;
-  font-family: 'MMI 5x7e', monospace;
+  font-family: 'Eggcrate Display Sans', monospace;
   font-weight: 400;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
@@ -162,7 +162,7 @@ body {
 
 /* Clock style */
 .clock {
-  font-family: 'MMI 5x7e', monospace;
+  font-family: 'Eggcrate Display Sans', monospace;
   font-weight: 400;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
