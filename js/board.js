@@ -23,56 +23,28 @@ const SUBWAY_CONFIG = {
   },
   headlines: {
     inner: [
-      // These are the messages that will rotate for the "inner" line
-      "Inner next arrival 8min",
-      "Inner next arrival 7min",
-      "Inner next arrival 6min",
-      "Inner next arrival 5min",
-      "Inner next arrival 4min",
-      "Inner next arrival 3min",
-      "Inner next arrival 2min",
-      "Inner next arrival 1min",
-      "INNER APPROACHING"
-      // "First inner due O633" is handled in logic and also included for font scaling
+      "Inner next arrival 8min", "Inner next arrival 7min", "Inner next arrival 6min",
+      "Inner next arrival 5min", "Inner next arrival 4min", "Inner next arrival 3min",
+      "Inner next arrival 2min", "Inner next arrival 1min", "INNER APPROACHING"
+      // "First inner due O633" also handled in logic and included for font scaling
     ],
     outer: [
-      // These are the messages that will rotate for the "outer" line
-      "Outer next arrival 8min",
-      "Outer next arrival 7min",
-      "Outer next arrival 6min",
-      "Outer next arrival 5min",
-      "Outer next arrival 4min",
-      "Outer next arrival 3min",
-      "Outer next arrival 2min",
-      "Outer next arrival 1min",
-      "OUTER APPROACHING"
-      // "First outer due O638" is handled in logic and also included for font scaling
+      "Outer next arrival 8min", "Outer next arrival 7min", "Outer next arrival 6min",
+      "Outer next arrival 5min", "Outer next arrival 4min", "Outer next arrival 3min",
+      "Outer next arrival 2min", "Outer next arrival 1min", "OUTER APPROACHING"
+      // "First outer due O638" also handled in logic and included for font scaling
     ]
   },
   advisories: {
-    // Base advisories always available
     base: [
       "Keep your belongings with you",
       "Please Mind the Gap",
       "Report anything suspicious"
     ],
-    // Inserts may be conditionally added
     inserts: [
-      { 
-        text: "NEXT INNER TERMINATES AT GOVAN", 
-        when: "inner_termination", 
-        line: "A" 
-      },
-      { 
-        text: "NEXT OUTER TERMINATES AT IBROX", 
-        when: "outer_termination", 
-        line: "B" 
-      },
-      { 
-        text: "Football- system busy 1-6pm", 
-        when: "football", 
-        line: "both"
-      }
+      { text: "NEXT INNER TERMINATES AT GOVAN", when: "inner_termination", line: "A" },
+      { text: "NEXT OUTER TERMINATES AT IBROX", when: "outer_termination", line: "B" },
+      { text: "Football- system busy 1-6pm", when: "football", line: "both" }
     ]
   },
   advisoryCycleSeconds: 25, // How long each advisory message is displayed
@@ -106,10 +78,13 @@ function pad(num, len = 2) {
 // Headlines and clock: font-size based on longest message in planned rotation.
 // Advisories: font-size based only on panel height (can always marquee).
 function scalePanelFonts() {
+  // Minimum font size for readability
+  const MIN_FONT_SIZE = 14;
+
   // Headline panels and their longest message (detected from config)
   const headlinePanels = [
-    { selector: '.headlineA', messages: SUBWAY_CONFIG.headlines.inner },
-    { selector: '.headlineB', messages: SUBWAY_CONFIG.headlines.outer }
+    { selector: '.headlineA', messages: SUBWAY_CONFIG.headlines.inner.concat(["First inner due O633"]) },
+    { selector: '.headlineB', messages: SUBWAY_CONFIG.headlines.outer.concat(["First outer due O638"]) }
   ];
 
   // Determine longest message for each headline panel
@@ -119,17 +94,11 @@ function scalePanelFonts() {
     const span = panel.querySelector('span');
     if (!span) return;
 
-    // Find longest message in rotation
+    // Find longest message in rotation (by character count)
     let longestMsg = messages.reduce((a, b) => a.length > b.length ? a : b, "");
-    // Add special 'First inner due O633' or 'First outer due O638' if needed
-    if (selector === '.headlineA') {
-      longestMsg = longestMsg.length > "First inner due O633".length ? longestMsg : "First inner due O633";
-    } else if (selector === '.headlineB') {
-      longestMsg = longestMsg.length > "First outer due O638".length ? longestMsg : "First outer due O638";
-    }
 
     // Fit font size so longestMsg fits in panel width and panel height
-    fitFont(panel, span, longestMsg, 0.97);
+    fitFont(panel, span, longestMsg, 0.97, MIN_FONT_SIZE);
 
     // Prevent wrap/overflow
     span.style.whiteSpace = 'nowrap';
@@ -142,7 +111,7 @@ function scalePanelFonts() {
   if (clockPanel) {
     const clockSpan = clockPanel.querySelector('span');
     if (clockSpan) {
-      fitFont(clockPanel, clockSpan, "Time Now 23:59:59", 0.97);
+      fitFont(clockPanel, clockSpan, "Time Now 23:59:59", 0.97, MIN_FONT_SIZE);
       clockSpan.style.whiteSpace = 'nowrap';
       clockSpan.style.overflow = 'hidden';
       clockSpan.style.textOverflow = 'ellipsis';
@@ -165,8 +134,8 @@ function scalePanelFonts() {
   });
 }
 
-// Helper: fit font for longest message, vertically and horizontally
-function fitFont(panel, span, message, maxHeightPct = 0.97) {
+// Helper: fit font for longest message, vertically and horizontally, never below minFontSize
+function fitFont(panel, span, message, maxHeightPct = 0.97, minFontSize = 14) {
   // Create offscreen test span
   const testSpan = document.createElement("span");
   testSpan.style.position = "absolute";
@@ -180,14 +149,15 @@ function fitFont(panel, span, message, maxHeightPct = 0.97) {
   const panelHeight = panel.clientHeight;
   let fontSize = panelHeight * maxHeightPct;
 
-  // Reduce until fits horizontally
+  // Reduce until fits horizontally, but never shrink below minFontSize
   testSpan.style.fontSize = fontSize + "px";
-  while (testSpan.scrollWidth > panel.clientWidth && fontSize > 5) {
+  while (testSpan.scrollWidth > panel.clientWidth && fontSize > minFontSize) {
     fontSize -= 1;
     testSpan.style.fontSize = fontSize + "px";
   }
-
-  // Apply result
+  if (fontSize <= minFontSize) {
+    console.warn(`Font-size for panel ${panel.className} shrunk to minimum for message:`, message);
+  }
   span.style.fontSize = fontSize + "px";
   document.body.removeChild(testSpan);
 }
@@ -450,3 +420,9 @@ class SubwayBoard {
     }, 50);
   }
 }
+
+// --- INITIALIZE BOARD --- //
+window.addEventListener("DOMContentLoaded", () => {
+  new SubwayBoard(SUBWAY_CONFIG);
+  // Font scaling is already handled in the DOMContentLoaded event above
+});
