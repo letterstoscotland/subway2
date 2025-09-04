@@ -2,7 +2,6 @@
 const SUBWAY_CONFIG = {
   timeZone: "Europe/London",
   operatingHours: {
-    // [startHour, endHour] in 24h format for each day (0=Sunday)
     0: [6.5, 18.5],    // Sunday: 06:30 - 18:30
     1: [6.5, 23.5],    // Monday: 06:30 - 23:30
     2: [6.5, 23.5],    // Tuesday: 06:30 - 23:30
@@ -10,7 +9,6 @@ const SUBWAY_CONFIG = {
     4: [6.5, 23.5],    // Thursday: 06:30 - 23:30
     5: [6.5, 23.5],    // Friday: 06:30 - 23:30
     6: [6.5, 23.5],    // Saturday: 06:30 - 23:30
-    // Termination times: [hour, min] for last service (for each day, 0=Sunday)
     endTimes: {
       0: [18, 21],     // Sunday: 18:21
       1: [23, 21],     // Monday: 23:21
@@ -68,67 +66,16 @@ function pad(num, len = 2) {
 }
 
 // --- FONT SCALING LOGIC FOR PANELS --- //
-// Headlines and clock: font-size based on longest message in planned rotation.
-// Advisories: font-size based only on panel height (can always marquee).
 function scalePanelFonts() {
-  // Minimum font size for readability
   const MIN_FONT_SIZE = 14;
 
-  // For headline splits: calculate separately for left and right
-  const headlineA_left_span = document.getElementById("headlineA-left");
-  const headlineA_right_span = document.getElementById("headlineA-right");
-  const headlineB_left_span = document.getElementById("headlineB-left");
-  const headlineB_right_span = document.getElementById("headlineB-right");
-
-  // Panel containers for measuring available width/height
-  const headlineA_panel = headlineA_left_span.parentNode;
-  const headlineB_panel = headlineB_left_span.parentNode;
-
-  // Calculate longest LEFT and RIGHT messages
-  // For first service, split "First inner due O633" → left: "First inner due", right: "O633"
-  // For countdowns, left: "Inner next arrival", right: "8min" etc
-  const innerLeftMessages = [
-    "First inner due", // for first service
-    ...SUBWAY_CONFIG.headlines.inner.map(msg => {
-      let match = msg.match(/^(.+?)(\d+min)$/);
-      return match ? match[1].trim() : msg; // left part or whole msg
-    })
-  ];
-  const innerRightMessages = [
-    "O633", // for first service
-    ...SUBWAY_CONFIG.headlines.inner.map(msg => {
-      let match = msg.match(/^(.+?)(\d+min)$/);
-      return match ? match[2] : (msg.endsWith("APPROACHING") ? "APPROACHING" : "");
-    })
-  ];
-
-  const outerLeftMessages = [
-    "First outer due",
-    ...SUBWAY_CONFIG.headlines.outer.map(msg => {
-      let match = msg.match(/^(.+?)(\d+min)$/);
-      return match ? match[1].trim() : msg;
-    })
-  ];
-  const outerRightMessages = [
-    "O638",
-    ...SUBWAY_CONFIG.headlines.outer.map(msg => {
-      let match = msg.match(/^(.+?)(\d+min)$/);
-      return match ? match[2] : (msg.endsWith("APPROACHING") ? "APPROACHING" : "");
-    })
-  ];
-
-  // Helper to find widest message
-  function widest(messages, span) {
+  // Helper: find widest message in pixel width
+  function findWidest(messages, fontStyles) {
     const testSpan = document.createElement("span");
-    const computed = window.getComputedStyle(span);
+    Object.assign(testSpan.style, fontStyles);
     testSpan.style.position = "absolute";
     testSpan.style.visibility = "hidden";
     testSpan.style.whiteSpace = "nowrap";
-    testSpan.style.fontFamily = computed.fontFamily;
-    testSpan.style.fontWeight = computed.fontWeight;
-    testSpan.style.letterSpacing = computed.letterSpacing;
-    testSpan.style.fontStyle = computed.fontStyle;
-    testSpan.style.textTransform = computed.textTransform;
     document.body.appendChild(testSpan);
 
     let widestMsg = "", maxWidth = 0;
@@ -145,25 +92,18 @@ function scalePanelFonts() {
     return widestMsg;
   }
 
-  // Scale font for given span/panel and message
-  function fitFont(panel, span, message, maxHeightPct = 0.97, minFontSize = MIN_FONT_SIZE) {
+  // Helper: fit font for a combined message to a given panel width/height
+  function fitFont(panel, fontStyles, message, maxHeightPct = 0.97, minFontSize = MIN_FONT_SIZE) {
     const testSpan = document.createElement("span");
-    const computed = window.getComputedStyle(span);
+    Object.assign(testSpan.style, fontStyles);
     testSpan.style.position = "absolute";
     testSpan.style.visibility = "hidden";
     testSpan.style.whiteSpace = "nowrap";
-    testSpan.style.fontFamily = computed.fontFamily;
-    testSpan.style.fontWeight = computed.fontWeight;
-    testSpan.style.letterSpacing = computed.letterSpacing;
-    testSpan.style.fontStyle = computed.fontStyle;
-    testSpan.style.textTransform = computed.textTransform;
     testSpan.textContent = message;
     document.body.appendChild(testSpan);
 
     const panelHeight = panel.clientHeight;
-    const panelWidth = span.classList.contains("headline-left") || span.classList.contains("headline-right")
-      ? panel.clientWidth / 2
-      : panel.clientWidth;
+    const panelWidth = panel.clientWidth;
 
     let fontSize = panelHeight * maxHeightPct;
     testSpan.style.fontSize = fontSize + "px";
@@ -179,27 +119,106 @@ function scalePanelFonts() {
       console.warn(`Font-size for panel ${panel.className} reached minimum for message: "${message}". Consider widening the panel or shortening the message.`);
       fontSize = minFontSize;
     }
-    span.style.fontSize = fontSize + "px";
     document.body.removeChild(testSpan);
+    return fontSize;
   }
 
-  // Apply scaling for headlines (split spans)
-  const innerLeftWidest = widest(innerLeftMessages, headlineA_left_span);
-  const innerRightWidest = widest(innerRightMessages, headlineA_right_span);
-  fitFont(headlineA_panel, headlineA_left_span, innerLeftWidest, 0.97, MIN_FONT_SIZE);
-  fitFont(headlineA_panel, headlineA_right_span, innerRightWidest, 0.97, MIN_FONT_SIZE);
+  // Headlines: both left/right spans in a row should get the SAME font size
+  function scaleHeadlineRow(panelSelector, leftSpanId, rightSpanId, leftMessages, rightMessages) {
+    const panel = document.querySelector(panelSelector);
+    const leftSpan = document.getElementById(leftSpanId);
+    const rightSpan = document.getElementById(rightSpanId);
+    if (!panel || !leftSpan || !rightSpan) return;
 
-  const outerLeftWidest = widest(outerLeftMessages, headlineB_left_span);
-  const outerRightWidest = widest(outerRightMessages, headlineB_right_span);
-  fitFont(headlineB_panel, headlineB_left_span, outerLeftWidest, 0.97, MIN_FONT_SIZE);
-  fitFont(headlineB_panel, headlineB_right_span, outerRightWidest, 0.97, MIN_FONT_SIZE);
+    // Get font styles from left span (assume identical for both)
+    const computed = window.getComputedStyle(leftSpan);
+    const fontStyles = {
+      fontFamily: computed.fontFamily,
+      fontWeight: computed.fontWeight,
+      letterSpacing: computed.letterSpacing,
+      fontStyle: computed.fontStyle,
+      textTransform: computed.textTransform,
+      whiteSpace: "nowrap"
+    };
+
+    // For each possible headline, build the combined message as it will appear (left + space + right)
+    let combinedMessages = [];
+    for (let i = 0; i < leftMessages.length; i++) {
+      let left = leftMessages[i] || "";
+      let right = rightMessages[i] || "";
+      combinedMessages.push((left + (right ? " " + right : "")).trim());
+    }
+
+    // Find the widest combined message
+    const widestCombined = findWidest(combinedMessages, fontStyles);
+
+    // Find the font size that fits the whole row (both spans) in panel width/height
+    const fontSize = fitFont(panel, fontStyles, widestCombined, 0.97, MIN_FONT_SIZE);
+
+    // Apply identical font size to both left and right spans
+    leftSpan.style.fontSize = fontSize + "px";
+    rightSpan.style.fontSize = fontSize + "px";
+    leftSpan.style.whiteSpace = 'nowrap';
+    rightSpan.style.whiteSpace = 'nowrap';
+    leftSpan.style.overflow = 'hidden';
+    rightSpan.style.overflow = 'hidden';
+    leftSpan.style.textOverflow = 'ellipsis';
+    rightSpan.style.textOverflow = 'ellipsis';
+  }
+
+  // Prepare all possible left/right messages for each headline row
+  // Headline A
+  const innerLeftMessages = [
+    "First inner due", // for first service
+    ...SUBWAY_CONFIG.headlines.inner.map(msg => {
+      let match = msg.match(/^(.+?)(\d+min)$/);
+      return match ? match[1].trim() : (msg.endsWith("APPROACHING") ? "INNER" : msg);
+    })
+  ];
+  const innerRightMessages = [
+    "O633", // for first service
+    ...SUBWAY_CONFIG.headlines.inner.map(msg => {
+      let match = msg.match(/^(.+?)(\d+min)$/);
+      return match ? match[2] : (msg.endsWith("APPROACHING") ? "APPROACHING" : "");
+    })
+  ];
+
+  // Headline B
+  const outerLeftMessages = [
+    "First outer due",
+    ...SUBWAY_CONFIG.headlines.outer.map(msg => {
+      let match = msg.match(/^(.+?)(\d+min)$/);
+      return match ? match[1].trim() : (msg.endsWith("APPROACHING") ? "OUTER" : msg);
+    })
+  ];
+  const outerRightMessages = [
+    "O638",
+    ...SUBWAY_CONFIG.headlines.outer.map(msg => {
+      let match = msg.match(/^(.+?)(\d+min)$/);
+      return match ? match[2] : (msg.endsWith("APPROACHING") ? "APPROACHING" : "");
+    })
+  ];
+
+  // Scale both headline rows
+  scaleHeadlineRow(".headlineA", "headlineA-left", "headlineA-right", innerLeftMessages, innerRightMessages);
+  scaleHeadlineRow(".headlineB", "headlineB-left", "headlineB-right", outerLeftMessages, outerRightMessages);
 
   // Clock panel: use max possible string
   const clockPanel = document.querySelector('.clock');
   if (clockPanel) {
     const clockSpan = clockPanel.querySelector('span');
     if (clockSpan) {
-      fitFont(clockPanel, clockSpan, "Time Now 23:59:59", 0.97, MIN_FONT_SIZE);
+      const computed = window.getComputedStyle(clockSpan);
+      const fontStyles = {
+        fontFamily: computed.fontFamily,
+        fontWeight: computed.fontWeight,
+        letterSpacing: computed.letterSpacing,
+        fontStyle: computed.fontStyle,
+        textTransform: computed.textTransform,
+        whiteSpace: "nowrap"
+      };
+      const fontSize = fitFont(clockPanel, fontStyles, "Time Now 23:59:59", 0.97, MIN_FONT_SIZE);
+      clockSpan.style.fontSize = fontSize + "px";
       clockSpan.style.whiteSpace = 'nowrap';
       clockSpan.style.overflow = 'hidden';
       clockSpan.style.textOverflow = 'ellipsis';
@@ -220,7 +239,6 @@ function scalePanelFonts() {
   });
 }
 
-// Run scaling at startup and on resize
 window.addEventListener('resize', scalePanelFonts);
 window.addEventListener('DOMContentLoaded', () => {
   scalePanelFonts();
@@ -311,13 +329,11 @@ class SubwayBoard {
       outerLeft = "First outer due";
       outerRight = "O638";
     } else if (!isFirstInner && isFirstOuter) {
-      // Inner uses countdown, outer uses first
       innerLeft = "Inner next arrival";
       innerRight = "8min";
       outerLeft = "First outer due";
       outerRight = "O638";
     } else {
-      // Normal countdown logic
       const secondsToday = hour*3600 + min*60 + now.getSeconds();
 
       // INNER
@@ -330,7 +346,7 @@ class SubwayBoard {
       let outerMinRemain = this.cycleMinutes - Math.floor(outerCyclePosition);
       let outerSecRemain = 60 - (secondsToday % 60);
 
-      // For "APPROACHING" (last 10 seconds)
+      // "APPROACHING"
       if (innerMinRemain === 1 && innerSecRemain <= 10) {
         innerLeft = "INNER";
         innerRight = "APPROACHING";
