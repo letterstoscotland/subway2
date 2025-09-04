@@ -31,8 +31,6 @@ const SUBWAY_CONFIG = {
       "Inner next arrival 2min",
       "Inner next arrival 1min",
       "INNER APPROACHING",
-      // CHANGED: removed "Inner service terminated"
-      // Now handled in updateHeadlines for first service message
     ],
     outer: [
       "Outer next arrival 8min",
@@ -44,8 +42,6 @@ const SUBWAY_CONFIG = {
       "Outer next arrival 2min",
       "Outer next arrival 1min",
       "OUTER APPROACHING",
-      // CHANGED: removed "Outer service terminated"
-      // Now handled in updateHeadlines for first service message
     ]
   },
   advisories: {
@@ -79,7 +75,6 @@ const SUBWAY_CONFIG = {
 
 // --- UTILITY FUNCTIONS --- //
 function getUKTime() {
-  // Always get current time in Europe/London
   const fmt = new Intl.DateTimeFormat('en-GB', {
     timeZone: SUBWAY_CONFIG.timeZone,
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -89,7 +84,6 @@ function getUKTime() {
   const parts = fmt.formatToParts(new Date());
   const obj = {};
   parts.forEach(p => { obj[p.type] = p.value; });
-  // Compose a date string in ISO format
   return new Date(
     `${obj.year}-${obj.month}-${obj.day}T${obj.hour}:${obj.minute}:${obj.second}`
   );
@@ -103,16 +97,13 @@ function pad(num, len = 2) {
 class SubwayBoard {
   constructor(config) {
     this.config = config;
-    // Headline countdown offsets (in minutes)
     this.innerOffset = 3; // Inner starts at 3min
     this.outerOffset = 8; // Outer starts at 8min
     this.cycleMinutes = 8;
-    // Advisory state
     this.advisoryAIndex = 0;
-    this.advisoryBIndex = 1; // Start offset so both advisories not same
+    this.advisoryBIndex = 1;
     this.lastAdvisoryAChange = 0;
     this.lastAdvisoryBChange = 0;
-    // DOM elements
     this.el = {
       headlineA_left: document.getElementById("headlineA-left"),
       headlineA_right: document.getElementById("headlineA-right"),
@@ -122,7 +113,6 @@ class SubwayBoard {
       advisoryB: document.getElementById("advisoryB-text"),
       clock: document.getElementById("clockText")
     };
-    // For flashing logic
     this.innerIsApproaching = false;
     this.outerIsApproaching = false;
     this.innerApproachStart = null;
@@ -149,24 +139,13 @@ class SubwayBoard {
     return hours >= start && hours < end;
   }
 
-  isServiceTerminated(now, inner=true) {
-    // Last approach at 1821/2321, then terminated
+  isServiceTerminated(now) {
     const day = now.getDay();
     const endHour = this.config.operatingHours.endTimes[day][0];
     const endMin = this.config.operatingHours.endTimes[day][1];
     const endTime = endHour + endMin/60;
     const hours = now.getHours() + now.getMinutes()/60;
     return hours >= endTime;
-  }
-
-  isFirstService(now) {
-    // Returns true if within first service period (after startup, before first train arrives)
-    const hour = now.getHours();
-    const min = now.getMinutes();
-    // Service always starts at 06:30
-    if (hour === 6 && min >= 30 && min < 33) return "inner";
-    if (hour === 6 && min >= 30 && min < 38) return "outer";
-    return false;
   }
 
   updateClock(now) {
@@ -177,23 +156,26 @@ class SubwayBoard {
     let innerMsg, outerMsg;
     let flashingA = false, flashingB = false;
 
-    // Show special "First [line] due XXXX" when just after service start
     const hour = now.getHours();
     const min = now.getMinutes();
 
     const isOperating = this.isOperating(now);
     const isTerminated = this.isServiceTerminated(now);
-    const firstServiceInner = (hour === 6 && min >= 30 && min < 33);
-    const firstServiceOuter = (hour === 6 && min >= 30 && min < 38);
+
+    // "First inner due O633" until 06:25, then switch to 8min countdown
+    // "First outer due O638" until 06:30, then switch to 8min countdown
+    const isFirstInner = (hour === 6 && min < 25);
+    const isFirstOuter = (hour === 6 && min < 30);
 
     if (!isOperating || isTerminated) {
-      // Service terminated: show blank or "Service terminated" (no next arrivals)
-      innerMsg = "First inner due 0633";
-      outerMsg = "First outer due 0638";
-    } else if (firstServiceInner || firstServiceOuter) {
-      // Show "First inner due 0633" and "First outer due 0638" after service starts
-      innerMsg = "First inner due 0633";
-      outerMsg = "First outer due 0638";
+      innerMsg = "First inner due O633";
+      outerMsg = "First outer due O638";
+    } else if (isFirstInner) {
+      innerMsg = "First inner due O633";
+      outerMsg = "First outer due O638";
+    } else if (!isFirstInner && isFirstOuter) {
+      innerMsg = this.config.headlines.inner[0]; // Start 8min countdown for inner
+      outerMsg = "First outer due O638";
     } else {
       // Normal countdown calculation: always progress 8,7,6,...1,APPROACHING
       const secondsToday = hour*3600 + min*60 + now.getSeconds();
@@ -208,19 +190,13 @@ class SubwayBoard {
       let outerMinRemain = this.cycleMinutes - Math.floor(outerCyclePosition);
       let outerSecRemain = 60 - (secondsToday % 60);
 
-      // Strict order: index = 8 - (minutes remaining - 1), so 8min = index 0, 7min = index 1, ..., 1min = index 7, APPROACHING = index 8
-      // For "APPROACHING": if innerMinRemain === 1 and innerSecRemain <= 10
-      // Show "APPROACHING" for exactly 10 seconds, then reset
-      // INNER
+      // Strict order: index = 8 - (minutes remaining - 1)
       if (innerMinRemain === 1 && innerSecRemain <= 10) {
         innerMsg = this.config.headlines.inner[8];
         flashingA = this.config.approachingFlash;
-        if (!this.innerIsApproaching) {
-          this.innerApproachStart = Date.now();
-        }
+        if (!this.innerIsApproaching) this.innerApproachStart = Date.now();
         this.innerIsApproaching = true;
       } else {
-        // Find headline index: 8min = 0, 7min = 1, ..., 1min = 7
         let index = Math.max(0, Math.min(7, this.cycleMinutes - innerMinRemain));
         innerMsg = this.config.headlines.inner[index];
         flashingA = false;
@@ -228,13 +204,10 @@ class SubwayBoard {
         this.innerApproachStart = null;
       }
 
-      // OUTER
       if (outerMinRemain === 1 && outerSecRemain <= 10) {
         outerMsg = this.config.headlines.outer[8];
         flashingB = this.config.approachingFlash;
-        if (!this.outerIsApproaching) {
-          this.outerApproachStart = Date.now();
-        }
+        if (!this.outerIsApproaching) this.outerApproachStart = Date.now();
         this.outerIsApproaching = true;
       } else {
         let index = Math.max(0, Math.min(7, this.cycleMinutes - outerMinRemain));
@@ -245,14 +218,11 @@ class SubwayBoard {
       }
     }
 
-    // Split headline into left/right for alignment
     this.setHeadlineSplit(this.el.headlineA_left, this.el.headlineA_right, innerMsg, flashingA);
     this.setHeadlineSplit(this.el.headlineB_left, this.el.headlineB_right, outerMsg, flashingB);
   }
 
   setHeadlineSplit(leftEl, rightEl, msg, flashing=false) {
-    // Find last space before number/min/APPROACHING
-    let splitIndex = msg.lastIndexOf(" ");
     if (
       msg.endsWith("APPROACHING") ||
       msg.startsWith("First inner due") ||
@@ -278,23 +248,22 @@ class SubwayBoard {
     }
   }
 
-  // --- ADVISORY LOGIC --- //
   updateAdvisories(now) {
     const day = now.getDay();
     const hour = now.getHours();
     const min = now.getMinutes();
     const month = now.getMonth();
 
-    const isFootballSeason = (month >= 7 && month <= 10) || (month === 11 && hour < 18); // Aug-May, not Dec
+    const isFootballSeason = (month >= 7 && month <= 10) || (month === 11 && hour < 18);
     const isOperating = this.isOperating(now);
     const isTerminated = this.isServiceTerminated(now);
-    const firstServiceInner = (hour === 6 && min >= 30 && min < 33);
-    const firstServiceOuter = (hour === 6 && min >= 30 && min < 38);
+
+    const isFirstInner = (hour === 6 && min < 25);
+    const isFirstOuter = (hour === 6 && min < 30);
 
     let advisoryAMessages = [...this.config.advisories.base];
     let advisoryBMessages = [...this.config.advisories.base];
 
-    // Football busy message
     if (
       isFootballSeason &&
       day === 6 &&
@@ -304,7 +273,6 @@ class SubwayBoard {
       advisoryBMessages.push("Football- system busy 1-6pm");
     }
 
-    // Termination messages
     if (
       (hour >= 9 && hour < 11) ||
       (day !== 0 && hour >= 22 && hour < 23) ||
@@ -314,26 +282,24 @@ class SubwayBoard {
       advisoryBMessages.push("NEXT OUTER TERMINATES AT IBROX");
     }
 
-    // Show special advisory during first service period or termination
-    if (!isOperating || isTerminated || firstServiceInner || firstServiceOuter) {
-      this.el.advisoryA.textContent = "Inner service terminated";
-      this.el.advisoryB.textContent = "Outer service terminated";
+    // Show "not in service" only during first service and terminated periods
+    if (!isOperating || isTerminated || isFirstInner || isFirstOuter) {
+      this.el.advisoryA.textContent = "Inner not in service";
+      this.el.advisoryB.textContent = "Outer not in service";
       return;
     }
 
-    // Advisory cycling: never both the same message
+    // Advisory cycling resumes when countdown starts
     const nowMs = Date.now();
     if (!this.lastAdvisoryAChange || (nowMs - this.lastAdvisoryAChange) > this.config.advisoryCycleSeconds * 1000) {
       this.advisoryAIndex = (this.advisoryAIndex + 1) % advisoryAMessages.length;
       this.lastAdvisoryAChange = nowMs;
-      
-      // For B: advance to next message that's not equal to A
       let nextB = (this.advisoryBIndex + 1) % advisoryBMessages.length;
       if (advisoryBMessages[nextB] === advisoryAMessages[this.advisoryAIndex]) {
         nextB = (nextB + 1) % advisoryBMessages.length;
       }
       this.advisoryBIndex = nextB;
-      this.lastAdvisoryBChange = nowMs + this.config.advisoryCycleSeconds * 500; // stagger
+      this.lastAdvisoryBChange = nowMs + this.config.advisoryCycleSeconds * 500;
     }
 
     this.showAdvisory(this.el.advisoryA, advisoryAMessages[this.advisoryAIndex]);
@@ -363,7 +329,6 @@ class SubwayBoard {
   }
 }
 
-// --- INITIALIZE --- //
 window.addEventListener("DOMContentLoaded", () => {
   new SubwayBoard(SUBWAY_CONFIG);
 });
