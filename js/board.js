@@ -26,13 +26,11 @@ const SUBWAY_CONFIG = {
       "Inner next arrival 8min", "Inner next arrival 7min", "Inner next arrival 6min",
       "Inner next arrival 5min", "Inner next arrival 4min", "Inner next arrival 3min",
       "Inner next arrival 2min", "Inner next arrival 1min", "INNER APPROACHING"
-      // "First inner due O633" also handled in logic and included for font scaling
     ],
     outer: [
       "Outer next arrival 8min", "Outer next arrival 7min", "Outer next arrival 6min",
       "Outer next arrival 5min", "Outer next arrival 4min", "Outer next arrival 3min",
       "Outer next arrival 2min", "Outer next arrival 1min", "OUTER APPROACHING"
-      // "First outer due O638" also handled in logic and included for font scaling
     ]
   },
   advisories: {
@@ -47,27 +45,22 @@ const SUBWAY_CONFIG = {
       { text: "Football- system busy 1-6pm", when: "football", line: "both" }
     ]
   },
-  advisoryCycleSeconds: 25, // How long each advisory message is displayed
-  marqueeSpeed: 60, // px/sec for advisory marquee
-  approachingFlash: true // Whether "APPROACHING" should flash
+  advisoryCycleSeconds: 25,
+  marqueeSpeed: 60,
+  approachingFlash: true
 };
 
 // --- UTILITY FUNCTIONS --- //
 function getUKTime() {
-  // Always get current time in Europe/London
   const fmt = new Intl.DateTimeFormat('en-GB', {
     timeZone: SUBWAY_CONFIG.timeZone,
     year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    hour12: false
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
   });
   const parts = fmt.formatToParts(new Date());
   const obj = {};
   parts.forEach(p => { obj[p.type] = p.value; });
-  // Compose a date string in ISO format
-  return new Date(
-    `${obj.year}-${obj.month}-${obj.day}T${obj.hour}:${obj.minute}:${obj.second}`
-  );
+  return new Date(`${obj.year}-${obj.month}-${obj.day}T${obj.hour}:${obj.minute}:${obj.second}`);
 }
 
 function pad(num, len = 2) {
@@ -81,30 +74,125 @@ function scalePanelFonts() {
   // Minimum font size for readability
   const MIN_FONT_SIZE = 14;
 
-  // Headline panels and their longest message (detected from config)
-  const headlinePanels = [
-    { selector: '.headlineA', messages: SUBWAY_CONFIG.headlines.inner.concat(["First inner due O633"]) },
-    { selector: '.headlineB', messages: SUBWAY_CONFIG.headlines.outer.concat(["First outer due O638"]) }
+  // For headline splits: calculate separately for left and right
+  const headlineA_left_span = document.getElementById("headlineA-left");
+  const headlineA_right_span = document.getElementById("headlineA-right");
+  const headlineB_left_span = document.getElementById("headlineB-left");
+  const headlineB_right_span = document.getElementById("headlineB-right");
+
+  // Panel containers for measuring available width/height
+  const headlineA_panel = headlineA_left_span.parentNode;
+  const headlineB_panel = headlineB_left_span.parentNode;
+
+  // Calculate longest LEFT and RIGHT messages
+  // For first service, split "First inner due O633" → left: "First inner due", right: "O633"
+  // For countdowns, left: "Inner next arrival", right: "8min" etc
+  const innerLeftMessages = [
+    "First inner due", // for first service
+    ...SUBWAY_CONFIG.headlines.inner.map(msg => {
+      let match = msg.match(/^(.+?)(\d+min)$/);
+      return match ? match[1].trim() : msg; // left part or whole msg
+    })
+  ];
+  const innerRightMessages = [
+    "O633", // for first service
+    ...SUBWAY_CONFIG.headlines.inner.map(msg => {
+      let match = msg.match(/^(.+?)(\d+min)$/);
+      return match ? match[2] : (msg.endsWith("APPROACHING") ? "APPROACHING" : "");
+    })
   ];
 
-  // Determine longest message for each headline panel
-  headlinePanels.forEach(({selector, messages}) => {
-    const panel = document.querySelector(selector);
-    if (!panel) return;
-    const span = panel.querySelector('span');
-    if (!span) return;
+  const outerLeftMessages = [
+    "First outer due",
+    ...SUBWAY_CONFIG.headlines.outer.map(msg => {
+      let match = msg.match(/^(.+?)(\d+min)$/);
+      return match ? match[1].trim() : msg;
+    })
+  ];
+  const outerRightMessages = [
+    "O638",
+    ...SUBWAY_CONFIG.headlines.outer.map(msg => {
+      let match = msg.match(/^(.+?)(\d+min)$/);
+      return match ? match[2] : (msg.endsWith("APPROACHING") ? "APPROACHING" : "");
+    })
+  ];
 
-    // Find longest message in rotation (by character count)
-    let longestMsg = messages.reduce((a, b) => a.length > b.length ? a : b, "");
+  // Helper to find widest message
+  function widest(messages, span) {
+    const testSpan = document.createElement("span");
+    const computed = window.getComputedStyle(span);
+    testSpan.style.position = "absolute";
+    testSpan.style.visibility = "hidden";
+    testSpan.style.whiteSpace = "nowrap";
+    testSpan.style.fontFamily = computed.fontFamily;
+    testSpan.style.fontWeight = computed.fontWeight;
+    testSpan.style.letterSpacing = computed.letterSpacing;
+    testSpan.style.fontStyle = computed.fontStyle;
+    testSpan.style.textTransform = computed.textTransform;
+    document.body.appendChild(testSpan);
 
-    // Fit font size so longestMsg fits in panel width and panel height
-    fitFont(panel, span, longestMsg, 0.97, MIN_FONT_SIZE);
+    let widestMsg = "", maxWidth = 0;
+    for (let msg of messages) {
+      testSpan.textContent = msg;
+      testSpan.style.fontSize = "24px";
+      let w = testSpan.scrollWidth;
+      if (w > maxWidth) {
+        maxWidth = w;
+        widestMsg = msg;
+      }
+    }
+    document.body.removeChild(testSpan);
+    return widestMsg;
+  }
 
-    // Prevent wrap/overflow
-    span.style.whiteSpace = 'nowrap';
-    span.style.overflow = 'hidden';
-    span.style.textOverflow = 'ellipsis';
-  });
+  // Scale font for given span/panel and message
+  function fitFont(panel, span, message, maxHeightPct = 0.97, minFontSize = MIN_FONT_SIZE) {
+    const testSpan = document.createElement("span");
+    const computed = window.getComputedStyle(span);
+    testSpan.style.position = "absolute";
+    testSpan.style.visibility = "hidden";
+    testSpan.style.whiteSpace = "nowrap";
+    testSpan.style.fontFamily = computed.fontFamily;
+    testSpan.style.fontWeight = computed.fontWeight;
+    testSpan.style.letterSpacing = computed.letterSpacing;
+    testSpan.style.fontStyle = computed.fontStyle;
+    testSpan.style.textTransform = computed.textTransform;
+    testSpan.textContent = message;
+    document.body.appendChild(testSpan);
+
+    const panelHeight = panel.clientHeight;
+    const panelWidth = span.classList.contains("headline-left") || span.classList.contains("headline-right")
+      ? panel.clientWidth / 2
+      : panel.clientWidth;
+
+    let fontSize = panelHeight * maxHeightPct;
+    testSpan.style.fontSize = fontSize + "px";
+    let fits = testSpan.scrollWidth <= panelWidth;
+
+    while (!fits && fontSize > minFontSize) {
+      fontSize -= 1;
+      testSpan.style.fontSize = fontSize + "px";
+      fits = testSpan.scrollWidth <= panelWidth;
+    }
+
+    if (fontSize <= minFontSize && !fits) {
+      console.warn(`Font-size for panel ${panel.className} reached minimum for message: "${message}". Consider widening the panel or shortening the message.`);
+      fontSize = minFontSize;
+    }
+    span.style.fontSize = fontSize + "px";
+    document.body.removeChild(testSpan);
+  }
+
+  // Apply scaling for headlines (split spans)
+  const innerLeftWidest = widest(innerLeftMessages, headlineA_left_span);
+  const innerRightWidest = widest(innerRightMessages, headlineA_right_span);
+  fitFont(headlineA_panel, headlineA_left_span, innerLeftWidest, 0.97, MIN_FONT_SIZE);
+  fitFont(headlineA_panel, headlineA_right_span, innerRightWidest, 0.97, MIN_FONT_SIZE);
+
+  const outerLeftWidest = widest(outerLeftMessages, headlineB_left_span);
+  const outerRightWidest = widest(outerRightMessages, headlineB_right_span);
+  fitFont(headlineB_panel, headlineB_left_span, outerLeftWidest, 0.97, MIN_FONT_SIZE);
+  fitFont(headlineB_panel, headlineB_right_span, outerRightWidest, 0.97, MIN_FONT_SIZE);
 
   // Clock panel: use max possible string
   const clockPanel = document.querySelector('.clock');
@@ -124,64 +212,32 @@ function scalePanelFonts() {
     if (!panel) return;
     const span = panel.querySelector('span');
     if (!span) return;
-    // Set font-size to 97% of panel height
     const panelHeight = panel.clientHeight;
     span.style.fontSize = `${panelHeight * 0.97}px`;
-    // Allow overflow/marquee as before
     span.style.whiteSpace = 'nowrap';
     span.style.overflow = '';
     span.style.textOverflow = '';
   });
 }
 
-// Helper: fit font for longest message, vertically and horizontally, never below minFontSize
-function fitFont(panel, span, message, maxHeightPct = 0.97, minFontSize = 14) {
-  // Create offscreen test span
-  const testSpan = document.createElement("span");
-  testSpan.style.position = "absolute";
-  testSpan.style.visibility = "hidden";
-  testSpan.style.whiteSpace = "nowrap";
-  testSpan.style.fontFamily = window.getComputedStyle(span).fontFamily;
-  testSpan.textContent = message;
-  document.body.appendChild(testSpan);
-
-  // Start with font-size = panel height * maxHeightPct
-  const panelHeight = panel.clientHeight;
-  let fontSize = panelHeight * maxHeightPct;
-
-  // Reduce until fits horizontally, but never shrink below minFontSize
-  testSpan.style.fontSize = fontSize + "px";
-  while (testSpan.scrollWidth > panel.clientWidth && fontSize > minFontSize) {
-    fontSize -= 1;
-    testSpan.style.fontSize = fontSize + "px";
-  }
-  if (fontSize <= minFontSize) {
-    console.warn(`Font-size for panel ${panel.className} shrunk to minimum for message:`, message);
-  }
-  span.style.fontSize = fontSize + "px";
-  document.body.removeChild(testSpan);
-}
-
 // Run scaling at startup and on resize
 window.addEventListener('resize', scalePanelFonts);
 window.addEventListener('DOMContentLoaded', () => {
   scalePanelFonts();
+  new SubwayBoard(SUBWAY_CONFIG);
 });
 
 // --- BOARD LOGIC --- //
 class SubwayBoard {
   constructor(config) {
     this.config = config;
-    // Headline countdown offsets (in minutes)
-    this.innerOffset = 3; // Inner starts at 3min
-    this.outerOffset = 8; // Outer starts at 8min
+    this.innerOffset = 3;
+    this.outerOffset = 8;
     this.cycleMinutes = 8;
-    // Advisory state
     this.advisoryAIndex = 0;
-    this.advisoryBIndex = 1; // Start offset so both advisories not same
+    this.advisoryBIndex = 1;
     this.lastAdvisoryAChange = 0;
     this.lastAdvisoryBChange = 0;
-    // DOM elements
     this.el = {
       headlineA_left: document.getElementById("headlineA-left"),
       headlineA_right: document.getElementById("headlineA-right"),
@@ -191,7 +247,6 @@ class SubwayBoard {
       advisoryB: document.getElementById("advisoryB-text"),
       clock: document.getElementById("clockText")
     };
-    // For flashing logic
     this.innerIsApproaching = false;
     this.outerIsApproaching = false;
     this.innerApproachStart = null;
@@ -209,11 +264,9 @@ class SubwayBoard {
     this.updateClock(now);
     this.updateHeadlines(now);
     this.updateAdvisories(now);
-    // No need to call scalePanelFonts here (font-size is fixed across all content changes)
   }
 
   isOperating(now) {
-    // Returns true if within operating hours
     const day = now.getDay();
     const hours = now.getHours() + now.getMinutes()/60;
     const [start, end] = this.config.operatingHours[day];
@@ -221,7 +274,6 @@ class SubwayBoard {
   }
 
   isServiceTerminated(now) {
-    // Returns true if past daily termination time
     const day = now.getDay();
     const endHour = this.config.operatingHours.endTimes[day][0];
     const endMin = this.config.operatingHours.endTimes[day][1];
@@ -235,7 +287,7 @@ class SubwayBoard {
   }
 
   updateHeadlines(now) {
-    let innerMsg, outerMsg;
+    let innerLeft, innerRight, outerLeft, outerRight;
     let flashingA = false, flashingB = false;
 
     const hour = now.getHours();
@@ -244,22 +296,28 @@ class SubwayBoard {
     const isOperating = this.isOperating(now);
     const isTerminated = this.isServiceTerminated(now);
 
-    // "First inner due O633" until 06:25, then switch to countdown
-    // "First outer due O638" until 06:30, then switch to countdown
     const isFirstInner = (hour === 6 && min < 25);
     const isFirstOuter = (hour === 6 && min < 30);
 
+    // For first service, split into left/right
     if (!isOperating || isTerminated) {
-      innerMsg = "First inner due O633";
-      outerMsg = "First outer due O638";
+      innerLeft = "First inner due";
+      innerRight = "O633";
+      outerLeft = "First outer due";
+      outerRight = "O638";
     } else if (isFirstInner) {
-      innerMsg = "First inner due O633";
-      outerMsg = "First outer due O638";
+      innerLeft = "First inner due";
+      innerRight = "O633";
+      outerLeft = "First outer due";
+      outerRight = "O638";
     } else if (!isFirstInner && isFirstOuter) {
-      innerMsg = this.config.headlines.inner[0];
-      outerMsg = "First outer due O638";
+      // Inner uses countdown, outer uses first
+      innerLeft = "Inner next arrival";
+      innerRight = "8min";
+      outerLeft = "First outer due";
+      outerRight = "O638";
     } else {
-      // Normal countdown calculation: always progress 8,7,6,...1,APPROACHING
+      // Normal countdown logic
       const secondsToday = hour*3600 + min*60 + now.getSeconds();
 
       // INNER
@@ -272,79 +330,70 @@ class SubwayBoard {
       let outerMinRemain = this.cycleMinutes - Math.floor(outerCyclePosition);
       let outerSecRemain = 60 - (secondsToday % 60);
 
-      // Strict order: index = 8 - (minutes remaining - 1), so 8min = index 0, 7min = index 1, ..., 1min = index 7, APPROACHING = index 8
-      // For "APPROACHING": if innerMinRemain === 1 and innerSecRemain <= 10
-      // Show "APPROACHING" for exactly 10 seconds, then reset
-      // INNER
+      // For "APPROACHING" (last 10 seconds)
       if (innerMinRemain === 1 && innerSecRemain <= 10) {
-        innerMsg = this.config.headlines.inner[8];
+        innerLeft = "INNER";
+        innerRight = "APPROACHING";
         flashingA = this.config.approachingFlash;
         if (!this.innerIsApproaching) this.innerApproachStart = Date.now();
         this.innerIsApproaching = true;
       } else {
-        // Find headline index: 8min = 0, 7min = 1, ..., 1min = 7
         let index = Math.max(0, Math.min(7, this.cycleMinutes - innerMinRemain));
-        innerMsg = this.config.headlines.inner[index];
+        let msg = this.config.headlines.inner[index];
+        let match = msg.match(/^(.+?)(\d+min)$/);
+        if (match) {
+          innerLeft = match[1].trim();
+          innerRight = match[2];
+        } else {
+          innerLeft = msg;
+          innerRight = "";
+        }
         flashingA = false;
         this.innerIsApproaching = false;
         this.innerApproachStart = null;
       }
 
-      // OUTER
       if (outerMinRemain === 1 && outerSecRemain <= 10) {
-        outerMsg = this.config.headlines.outer[8];
+        outerLeft = "OUTER";
+        outerRight = "APPROACHING";
         flashingB = this.config.approachingFlash;
         if (!this.outerIsApproaching) this.outerApproachStart = Date.now();
         this.outerIsApproaching = true;
       } else {
         let index = Math.max(0, Math.min(7, this.cycleMinutes - outerMinRemain));
-        outerMsg = this.config.headlines.outer[index];
+        let msg = this.config.headlines.outer[index];
+        let match = msg.match(/^(.+?)(\d+min)$/);
+        if (match) {
+          outerLeft = match[1].trim();
+          outerRight = match[2];
+        } else {
+          outerLeft = msg;
+          outerRight = "";
+        }
         flashingB = false;
         this.outerIsApproaching = false;
         this.outerApproachStart = null;
       }
     }
 
-    // Split headline into left/right for alignment
-    this.setHeadlineSplit(this.el.headlineA_left, this.el.headlineA_right, innerMsg, flashingA);
-    this.setHeadlineSplit(this.el.headlineB_left, this.el.headlineB_right, outerMsg, flashingB);
+    this.setHeadlineSplit(this.el.headlineA_left, this.el.headlineA_right, innerLeft, innerRight, flashingA);
+    this.setHeadlineSplit(this.el.headlineB_left, this.el.headlineB_right, outerLeft, outerRight, flashingB);
   }
 
-  setHeadlineSplit(leftEl, rightEl, msg, flashing=false) {
-    // Find last space before number/min/APPROACHING
-    if (
-      msg.endsWith("APPROACHING") ||
-      msg.startsWith("First inner due") ||
-      msg.startsWith("First outer due")
-    ) {
-      leftEl.textContent = msg;
-      rightEl.textContent = "";
-      leftEl.classList.toggle("flashing", flashing);
-      rightEl.classList.remove("flashing");
-    } else {
-      let match = msg.match(/^(.+?)(\d+min)$/);
-      if (match) {
-        leftEl.textContent = match[1].trim();
-        rightEl.textContent = match[2];
-        leftEl.classList.remove("flashing");
-        rightEl.classList.remove("flashing");
-      } else {
-        leftEl.textContent = msg;
-        rightEl.textContent = "";
-        leftEl.classList.remove("flashing");
-        rightEl.classList.remove("flashing");
-      }
-    }
+  setHeadlineSplit(leftEl, rightEl, leftMsg, rightMsg, flashing=false) {
+    leftEl.textContent = leftMsg;
+    rightEl.textContent = rightMsg;
+    leftEl.classList.toggle("flashing", flashing);
+    rightEl.classList.remove("flashing");
   }
 
-  // --- ADVISORY LOGIC --- //
   updateAdvisories(now) {
     const day = now.getDay();
     const hour = now.getHours();
     const min = now.getMinutes();
     const month = now.getMonth();
 
-    const isFootballSeason = (month >= 7 && month <= 10) || (month === 11 && hour < 18); // Aug-May, not Dec
+    const isFootballSeason = (month >= 7 && month <= 10) || (month === 11 && hour < 18);
     const isOperating = this.isOperating(now);
     const isTerminated = this.isServiceTerminated(now);
 
@@ -354,7 +403,6 @@ class SubwayBoard {
     let advisoryAMessages = [...this.config.advisories.base];
     let advisoryBMessages = [...this.config.advisories.base];
 
-    // Football busy message
     if (
       isFootballSeason &&
       day === 6 &&
@@ -364,7 +412,6 @@ class SubwayBoard {
       advisoryBMessages.push("Football- system busy 1-6pm");
     }
 
-    // Termination messages
     if (
       (hour >= 9 && hour < 11) ||
       (day !== 0 && hour >= 22 && hour < 23) ||
@@ -420,9 +467,3 @@ class SubwayBoard {
     }, 50);
   }
 }
-
-// --- INITIALIZE BOARD --- //
-window.addEventListener("DOMContentLoaded", () => {
-  new SubwayBoard(SUBWAY_CONFIG);
-  // Font scaling is already handled in the DOMContentLoaded event above
-});
