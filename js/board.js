@@ -1,4 +1,3 @@
-// --- CONFIGURATION --- //
 const SUBWAY_CONFIG = {
   timeZone: "Europe/London",
   operatingHours: {
@@ -61,14 +60,12 @@ function pad(num, len = 2) {
 
 // Format headline with a consistent gap before minutes/APPROACHING
 function formatHeadline(main, right) {
-  // Pad main to 22 characters (adjust as needed for your board)
+  // Pad main to 22 characters (adjust to fit board width/font)
   let padLen = Math.max(0, 22 - main.length);
   return main + " ".repeat(padLen) + right;
 }
 
-// --- FONT SCALING LOGIC FOR HEADLINE PANELS --- //
 function scalePanelFonts() {
-  // Find longest possible headline string (with gap and right part)
   const headlineSpans = [
     document.getElementById("headlineA-text"),
     document.getElementById("headlineB-text")
@@ -86,7 +83,6 @@ function scalePanelFonts() {
   headlineSpans.forEach(span => {
     if (!span) return;
     const panel = span.parentNode;
-    // Use font-family and styles from span
     const computed = window.getComputedStyle(span);
     const testSpan = document.createElement("span");
     testSpan.style.position = "absolute";
@@ -190,7 +186,6 @@ class SubwayBoard {
   }
 
   updateHeadlines(now) {
-    // Calculate which message to show for each headline
     let innerMsg, outerMsg;
     const hour = now.getHours();
     const min = now.getMinutes();
@@ -213,17 +208,14 @@ class SubwayBoard {
     } else {
       const secondsToday = hour * 3600 + min * 60 + now.getSeconds();
 
-      // INNER
       let innerCyclePosition = ((secondsToday / 60 - this.innerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
       let innerMinRemain = this.cycleMinutes - Math.floor(innerCyclePosition);
       let innerSecRemain = 60 - (secondsToday % 60);
 
-      // OUTER
       let outerCyclePosition = ((secondsToday / 60 - this.outerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
       let outerMinRemain = this.cycleMinutes - Math.floor(outerCyclePosition);
       let outerSecRemain = 60 - (secondsToday % 60);
 
-      // "APPROACHING"
       if (innerMinRemain === 1 && innerSecRemain <= 10) {
         innerMsg = formatHeadline("INNER", "APPROACHING");
         this.el.headlineA.classList.add("flashing");
@@ -249,7 +241,6 @@ class SubwayBoard {
 
   updateAdvisories(now) {
     const advisories = this.config.advisories.base;
-    // Cycle messages
     const nowMs = Date.now();
     if (!this.lastAdvisoryAChange || (nowMs - this.lastAdvisoryAChange) > this.config.advisoryCycleSeconds * 1000) {
       this.advisoryAIndex = (this.advisoryAIndex + 1) % advisories.length;
