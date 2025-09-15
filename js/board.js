@@ -103,6 +103,53 @@ function replaceZeroWithO(str) {
   return String(str).replace(/0/g, "O");
 }
 
+// --- FIRST TRAIN CALCULATION --- //
+function getFirstTrainTimes(config, now) {
+  // Returns: { innerTime: "HH:MM", outerTime: "HH:MM", innerDay: #, outerDay: # }
+  // Works for the next operating day after 'now'
+  let day = now.getDay();
+  let hour = now.getHours() + now.getMinutes() / 60;
+
+  for (let i = 0; i < 7; i++) {
+    let checkDay = (day + i) % 7;
+    let [start, end] = config.operatingHours[checkDay];
+
+    if (i === 0 && hour < start) {
+      // Today, before start
+    } else if (i > 0 && start !== undefined && end !== undefined) {
+      // Next available day
+    } else {
+      continue;
+    }
+
+    let serviceStartMinutes = Math.round(start * 60);
+
+    // Inner: offset = 3, cycle = 8
+    let nInner = Math.ceil((serviceStartMinutes - 3) / 8);
+    let firstInner = 3 + 8 * nInner;
+    let innerHH = Math.floor(firstInner / 60);
+    let innerMM = firstInner % 60;
+
+    // Outer: offset = 8, cycle = 8
+    let nOuter = Math.ceil((serviceStartMinutes - 8) / 8);
+    let firstOuter = 8 + 8 * nOuter;
+    let outerHH = Math.floor(firstOuter / 60);
+    let outerMM = firstOuter % 60;
+
+    let innerTime = `${pad(innerHH)}:${pad(innerMM)}`;
+    let outerTime = `${pad(outerHH)}:${pad(outerMM)}`;
+
+    return {
+      innerTime,
+      outerTime,
+      innerDay: checkDay,
+      outerDay: checkDay
+    };
+  }
+  // Fallback
+  return { innerTime: "--:--", outerTime: "--:--", innerDay: null, outerDay: null };
+}
+
 // --- BOARD LOGIC --- //
 class SubwayBoard {
   constructor(config) {
@@ -164,7 +211,6 @@ class SubwayBoard {
   }
 
   updateClock(now) {
-    // Apply replacement to the whole output
     const h = pad(now.getHours());
     const m = pad(now.getMinutes());
     const s = pad(now.getSeconds());
@@ -172,13 +218,17 @@ class SubwayBoard {
   }
 
   updateHeadlines(now) {
-    // Strict countdown calculation: always progress 8,7,6,...1,APPROACHING
     let innerMsg, outerMsg;
     let flashingA = false, flashingB = false;
 
     if (!this.isOperating(now) || this.isServiceTerminated(now, true)) {
-      innerMsg = this.config.headlines.inner[9];
-      outerMsg = this.config.headlines.outer[9];
+      // OUTSIDE SERVICE: Show next first train time
+      const next = getFirstTrainTimes(this.config, now);
+
+      // Use "First inner ..." and "First outer ..."
+      innerMsg = `First inner ${next.innerTime}`;
+      outerMsg = `First outer ${next.outerTime}`;
+
       this.innerIsApproaching = false;
       this.outerIsApproaching = false;
       this.innerApproachStart = null;
