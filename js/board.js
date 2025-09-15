@@ -5,7 +5,7 @@ const SUBWAY_CONFIG = {
     // [startHour, endHour] in 24h format for each day (0=Sunday)
     0: [10.0, 18.5],    // Sunday: 10:00 - 18:30
     1: [6.5, 23.5],    // Monday: 06:30 - 23:30
-    2: [6.5, 23.5],    // Tuesday
+    2: [0.0, 23.5],    // Tuesday
     3: [6.5, 23.5],    // Wednesday
     4: [6.5, 23.5],    // Thursday
     5: [6.5, 23.5],    // Friday
