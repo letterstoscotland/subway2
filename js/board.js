@@ -31,7 +31,7 @@ const SUBWAY_CONFIG = {
       "Inner next arrival 2min",
       "Inner next arrival 1min",
       "INNER APPROACHING",
-      "Inner service terminated"
+      "Inner service complete"
     ],
     outer: [
       "Outer next arrival 8min",
@@ -43,7 +43,7 @@ const SUBWAY_CONFIG = {
       "Outer next arrival 2min",
       "Outer next arrival 1min",
       "OUTER APPROACHING",
-      "Outer service terminated"
+      "Outer service complete"
     ]
   },
   advisories: {
