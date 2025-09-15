@@ -78,7 +78,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   color: var(--color-yellow);
-  text-shadow: 0 0 8px #ffd800, 0 0 20px #ffb000;
+  text-shadow: 0 0 4px #ffd800, 0 0 14px #ffb000;
   letter-spacing: 0.03em;
   font-size: var(--headline-size);
   line-height: 1;
