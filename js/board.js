@@ -150,6 +150,15 @@ function getFirstTrainTimes(config, now) {
   return { innerTime: "--:--", outerTime: "--:--", innerDay: null, outerDay: null };
 }
 
+// --- NEXT ARRIVAL MINUTES UTILITY --- //
+function getNextArrivalMinutes(now, offset, cycleMinutes) {
+  // Returns the time (in minutes since midnight) of the next scheduled arrival for this line
+  const minutesNow = now.getHours() * 60 + now.getMinutes();
+  // Find the smallest n so that offset + n * cycle >= minutesNow
+  const n = Math.ceil((minutesNow - offset) / cycleMinutes);
+  return offset + n * cycleMinutes;
+}
+
 // --- BOARD LOGIC --- //
 class SubwayBoard {
   constructor(config) {
@@ -200,57 +209,33 @@ class SubwayBoard {
     return hours >= start && hours < end;
   }
 
-  isServiceTerminated(now, inner=true) {
-    // Last approach at 1821/2321, then terminated
+  getLineEndTimeMinutes(now, line) {
+    // line: "inner" or "outer"
     const day = now.getDay();
-    const endHour = this.config.operatingHours.endTimes[day][0];
-    const endMin = this.config.operatingHours.endTimes[day][1];
-    const endTime = endHour + endMin/60;
-    const hours = now.getHours() + now.getMinutes()/60;
-    return hours >= endTime;
-  }
-
-  updateClock(now) {
-    const h = pad(now.getHours());
-    const m = pad(now.getMinutes());
-    const s = pad(now.getSeconds());
-    this.el.clock.textContent = replaceZeroWithO(`Time Now ${h}:${m}:${s}`);
+    const [endHour, endMin] = this.config.operatingHours.endTimes[day];
+    return endHour * 60 + endMin;
   }
 
   updateHeadlines(now) {
     let innerMsg, outerMsg;
     let flashingA = false, flashingB = false;
 
-    if (!this.isOperating(now) || this.isServiceTerminated(now, true)) {
-      // OUTSIDE SERVICE: Show next first train time
-      const next = getFirstTrainTimes(this.config, now);
+    // --- INNER LINE LOGIC ---
+    let innerInService = this.isOperating(now);
+    let nextInnerArrivalMinutes = getNextArrivalMinutes(
+      now,
+      this.innerOffset,
+      this.cycleMinutes
+    );
+    const innerEndTimeMinutes = this.getLineEndTimeMinutes(now, "inner");
 
-      // Use "First inner ..." and "First outer ..."
-      innerMsg = `First inner ${next.innerTime}`;
-      outerMsg = `First outer ${next.outerTime}`;
-
-      this.innerIsApproaching = false;
-      this.outerIsApproaching = false;
-      this.innerApproachStart = null;
-      this.outerApproachStart = null;
-    } else {
-      // Calculate minutes and seconds for each circle, unsynchronized
-      const secondsToday = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
-
-      // INNER
+    if (innerInService && nextInnerArrivalMinutes < innerEndTimeMinutes) {
+      // Calculate minutes and seconds for countdown
+      const secondsToday = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
       let innerCyclePosition = ((secondsToday / 60 - this.innerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
       let innerMinRemain = this.cycleMinutes - Math.floor(innerCyclePosition);
       let innerSecRemain = 60 - (secondsToday % 60);
 
-      // OUTER
-      let outerCyclePosition = ((secondsToday / 60 - this.outerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
-      let outerMinRemain = this.cycleMinutes - Math.floor(outerCyclePosition);
-      let outerSecRemain = 60 - (secondsToday % 60);
-
-      // Strict order: index = 8 - (minutes remaining - 1), so 8min = index 0, 7min = index 1, ..., 1min = index 7, APPROACHING = index 8
-      // For "APPROACHING": if innerMinRemain === 1 and innerSecRemain <= 10
-      // Show "APPROACHING" for exactly 10 seconds, then reset
-      // INNER
       if (innerMinRemain === 1 && innerSecRemain <= 10) {
         innerMsg = this.config.headlines.inner[8];
         flashingA = this.config.approachingFlash;
@@ -259,15 +244,37 @@ class SubwayBoard {
         }
         this.innerIsApproaching = true;
       } else {
-        // Find headline index: 8min = 0, 7min = 1, ..., 1min = 7
         let index = Math.max(0, Math.min(7, this.cycleMinutes - innerMinRemain));
         innerMsg = this.config.headlines.inner[index];
         flashingA = false;
         this.innerIsApproaching = false;
         this.innerApproachStart = null;
       }
+    } else {
+      // OUTSIDE SERVICE OR LAST ARRIVAL SHOWN
+      const next = getFirstTrainTimes(this.config, now);
+      innerMsg = `First inner ${next.innerTime}`;
+      flashingA = false;
+      this.innerIsApproaching = false;
+      this.innerApproachStart = null;
+    }
 
-      // OUTER
+    // --- OUTER LINE LOGIC ---
+    let outerInService = this.isOperating(now);
+    let nextOuterArrivalMinutes = getNextArrivalMinutes(
+      now,
+      this.outerOffset,
+      this.cycleMinutes
+    );
+    const outerEndTimeMinutes = this.getLineEndTimeMinutes(now, "outer");
+
+    if (outerInService && nextOuterArrivalMinutes < outerEndTimeMinutes) {
+      // Calculate minutes and seconds for countdown
+      const secondsToday = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      let outerCyclePosition = ((secondsToday / 60 - this.outerOffset) % this.cycleMinutes + this.cycleMinutes) % this.cycleMinutes;
+      let outerMinRemain = this.cycleMinutes - Math.floor(outerCyclePosition);
+      let outerSecRemain = 60 - (secondsToday % 60);
+
       if (outerMinRemain === 1 && outerSecRemain <= 10) {
         outerMsg = this.config.headlines.outer[8];
         flashingB = this.config.approachingFlash;
@@ -282,6 +289,13 @@ class SubwayBoard {
         this.outerIsApproaching = false;
         this.outerApproachStart = null;
       }
+    } else {
+      // OUTSIDE SERVICE OR LAST ARRIVAL SHOWN
+      const next = getFirstTrainTimes(this.config, now);
+      outerMsg = `First outer ${next.outerTime}`;
+      flashingB = false;
+      this.outerIsApproaching = false;
+      this.outerApproachStart = null;
     }
 
     // Split headline into left/right for alignment
@@ -313,6 +327,13 @@ class SubwayBoard {
     }
   }
 
+  updateClock(now) {
+    const h = pad(now.getHours());
+    const m = pad(now.getMinutes());
+    const s = pad(now.getSeconds());
+    this.el.clock.textContent = replaceZeroWithO(`Time Now ${h}:${m}:${s}`);
+  }
+
   // --- ADVISORY LOGIC --- //
   updateAdvisories(now) {
     const day = now.getDay();
@@ -320,7 +341,7 @@ class SubwayBoard {
     const min = now.getMinutes();
     const month = now.getMonth();
     const isFootballSeason = (month >= 7 && month <= 10) || (month === 11 && hour < 18); // Aug-May, not Dec
-    const isService = this.isOperating(now) && !this.isServiceTerminated(now);
+    const isService = this.isOperating(now);
 
     let advisoryAMessages = [...this.config.advisories.base];
     let advisoryBMessages = [...this.config.advisories.base];
