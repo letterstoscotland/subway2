@@ -3,8 +3,8 @@ const SUBWAY_CONFIG = {
   timeZone: "Europe/London",
   operatingHours: {
     // [startHour, endHour] in 24h format for each day (0=Sunday)
-    0: [6.5, 18.5],    // Sunday: 06:30 - 18:30
-    1: [6.5, 23.5],    // Monday
+    0: [10.0, 18.5],    // Sunday: 10:00 - 18:30
+    1: [6.5, 23.5],    // Monday: 06:30 - 23:30
     2: [6.5, 23.5],    // Tuesday
     3: [6.5, 23.5],    // Wednesday
     4: [6.5, 23.5],    // Thursday
