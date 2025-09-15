@@ -2,35 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Subway Board</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>Subway Board Replica</title>
+  <link rel="stylesheet" href="style-board.css">
 </head>
 <body>
   <div class="subway-board">
-    <div class="buffer-top"></div>
-    <div class="board-line headline headlineA">
-      <span id="headlineA-left" class="headline-left"></span>
-      <span id="headlineA-right" class="headline-right"></span>
+    <div class="row headline" id="headlineA">
+      <span id="headlineA-left" class="headline-left">Inner next arrival</span>
+      <span id="headlineA-right" class="headline-right">8min</span>
     </div>
-    <div class="gap10a"></div>
-    <div class="board-line advisory advisoryA">
-      <span id="advisoryA-text"></span>
+    <div class="row advisory" id="advisoryA">
+      <span id="advisoryA-text">Football- System busy 1-8pm</span>
     </div>
-    <div class="gap20a"></div>
-    <div class="board-line headline headlineB">
-      <span id="headlineB-left" class="headline-left"></span>
+    <div class="row headline" id="headlineB">
+      <span id="headlineB-left" class="headline-left">Outer Circle Suspended</span>
       <span id="headlineB-right" class="headline-right"></span>
     </div>
-    <div class="gap10b"></div>
-    <div class="board-line advisory advisoryB">
-      <span id="advisoryB-text"></span>
+    <div class="row advisory" id="advisoryB">
+      <span id="advisoryB-text">Report anything suspicious</span>
     </div>
-    <div class="gap20b"></div>
-    <div class="clock">
-      <span id="clockText"></span>
+    <div class="row clock" id="clockRow">
+      <span id="clockText">Time Now 15:15:32</span>
     </div>
-    <div class="buffer-bottom"></div>
   </div>
-  <script src="js/board.js"></script>
 </body>
 </html>
