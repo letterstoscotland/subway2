@@ -31,7 +31,7 @@ const SUBWAY_CONFIG = {
       "Inner next arrival 2min",
       "Inner next arrival 1min",
       "INNER APPROACHING",
-      "Inner service terminated"
+      "Inner service complete"
     ],
     outer: [
       "Outer next arrival 8min",
@@ -43,7 +43,7 @@ const SUBWAY_CONFIG = {
       "Outer next arrival 2min",
       "Outer next arrival 1min",
       "OUTER APPROACHING",
-      "Outer service terminated"
+      "Outer service complete"
     ]
   },
   advisories: {
@@ -95,6 +95,12 @@ function getUKTime() {
 
 function pad(num, len = 2) {
   return num.toString().padStart(len, "0");
+}
+
+// --- REPLACE 0 WITH O FOR DISPLAY --- //
+function replaceZeroWithO(str) {
+  // Replace all digit 0 with uppercase letter O everywhere in the string
+  return String(str).replace(/0/g, "O");
 }
 
 // --- BOARD LOGIC --- //
@@ -158,7 +164,11 @@ class SubwayBoard {
   }
 
   updateClock(now) {
-    this.el.clock.textContent = `Time Now ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    // Apply replacement to the whole output
+    const h = pad(now.getHours());
+    const m = pad(now.getMinutes());
+    const s = pad(now.getSeconds());
+    this.el.clock.textContent = replaceZeroWithO(`Time Now ${h}:${m}:${s}`);
   }
 
   updateHeadlines(now) {
@@ -233,19 +243,19 @@ class SubwayBoard {
     // Find last space before number/min/APPROACHING
     let splitIndex = msg.lastIndexOf(" ");
     if (msg.endsWith("APPROACHING") || msg.endsWith("terminated")) {
-      leftEl.textContent = msg;
+      leftEl.textContent = replaceZeroWithO(msg);
       rightEl.textContent = "";
       leftEl.classList.toggle("flashing", flashing);
       rightEl.classList.remove("flashing");
     } else {
       let match = msg.match(/^(.+?)(\d+min)$/);
       if (match) {
-        leftEl.textContent = match[1].trim();
-        rightEl.textContent = match[2];
+        leftEl.textContent = replaceZeroWithO(match[1].trim());
+        rightEl.textContent = replaceZeroWithO(match[2]);
         leftEl.classList.remove("flashing");
         rightEl.classList.remove("flashing");
       } else {
-        leftEl.textContent = msg;
+        leftEl.textContent = replaceZeroWithO(msg);
         rightEl.textContent = "";
         leftEl.classList.remove("flashing");
         rightEl.classList.remove("flashing");
@@ -254,66 +264,66 @@ class SubwayBoard {
   }
 
   // --- ADVISORY LOGIC --- //
-updateAdvisories(now) {
-  const day = now.getDay();
-  const hour = now.getHours();
-  const min = now.getMinutes();
-  const month = now.getMonth();
-  const isFootballSeason = (month >= 7 && month <= 10) || (month === 11 && hour < 18); // Aug-May, not Dec
-  const isService = this.isOperating(now) && !this.isServiceTerminated(now);
+  updateAdvisories(now) {
+    const day = now.getDay();
+    const hour = now.getHours();
+    const min = now.getMinutes();
+    const month = now.getMonth();
+    const isFootballSeason = (month >= 7 && month <= 10) || (month === 11 && hour < 18); // Aug-May, not Dec
+    const isService = this.isOperating(now) && !this.isServiceTerminated(now);
 
-  let advisoryAMessages = [...this.config.advisories.base];
-  let advisoryBMessages = [...this.config.advisories.base];
+    let advisoryAMessages = [...this.config.advisories.base];
+    let advisoryBMessages = [...this.config.advisories.base];
 
-  // Football busy message
-  if (
-    isFootballSeason &&
-    day === 6 &&
-    hour >= 6 && hour < 18
-  ) {
-    advisoryAMessages.push("Football- system busy 1-6pm");
-    advisoryBMessages.push("Football- system busy 1-6pm");
-  }
-
-  // Termination messages
-  if (
-    (hour >= 9 && hour < 11) ||
-    (day !== 0 && hour >= 22 && hour < 23) ||
-    (day === 0 && hour >= 17 && hour < 18)
-  ) {
-    advisoryAMessages.push("NEXT INNER TERMINATES AT GOVAN");
-    advisoryBMessages.push("NEXT OUTER TERMINATES AT IBROX");
-  }
-
-  if (!isService) {
-    this.el.advisoryA.textContent = "";
-    this.el.advisoryB.textContent = "";
-    return;
-  }
-
-  // Advisory cycling: never both the same message
-  const nowMs = Date.now();
-  if (!this.lastAdvisoryAChange || (nowMs - this.lastAdvisoryAChange) > this.config.advisoryCycleSeconds * 1000) {
-    this.advisoryAIndex = (this.advisoryAIndex + 1) % advisoryAMessages.length;
-    this.lastAdvisoryAChange = nowMs;
-    
-    // For B: advance to next message that's not equal to A
-    let nextB = (this.advisoryBIndex + 1) % advisoryBMessages.length;
-    if (advisoryBMessages[nextB] === advisoryAMessages[this.advisoryAIndex]) {
-      nextB = (nextB + 1) % advisoryBMessages.length;
+    // Football busy message
+    if (
+      isFootballSeason &&
+      day === 6 &&
+      hour >= 6 && hour < 18
+    ) {
+      advisoryAMessages.push("Football- system busy 1-6pm");
+      advisoryBMessages.push("Football- system busy 1-6pm");
     }
-    this.advisoryBIndex = nextB;
-    this.lastAdvisoryBChange = nowMs + this.config.advisoryCycleSeconds * 500; // stagger
-  }
 
-  this.showAdvisory(this.el.advisoryA, advisoryAMessages[this.advisoryAIndex]);
-  this.showAdvisory(this.el.advisoryB, advisoryBMessages[this.advisoryBIndex]);
-}
+    // Termination messages
+    if (
+      (hour >= 9 && hour < 11) ||
+      (day !== 0 && hour >= 22 && hour < 23) ||
+      (day === 0 && hour >= 17 && hour < 18)
+    ) {
+      advisoryAMessages.push("NEXT INNER TERMINATES AT GOVAN");
+      advisoryBMessages.push("NEXT OUTER TERMINATES AT IBROX");
+    }
+
+    if (!isService) {
+      this.el.advisoryA.textContent = "";
+      this.el.advisoryB.textContent = "";
+      return;
+    }
+
+    // Advisory cycling: never both the same message
+    const nowMs = Date.now();
+    if (!this.lastAdvisoryAChange || (nowMs - this.lastAdvisoryAChange) > this.config.advisoryCycleSeconds * 1000) {
+      this.advisoryAIndex = (this.advisoryAIndex + 1) % advisoryAMessages.length;
+      this.lastAdvisoryAChange = nowMs;
+      
+      // For B: advance to next message that's not equal to A
+      let nextB = (this.advisoryBIndex + 1) % advisoryBMessages.length;
+      if (advisoryBMessages[nextB] === advisoryAMessages[this.advisoryAIndex]) {
+        nextB = (nextB + 1) % advisoryBMessages.length;
+      }
+      this.advisoryBIndex = nextB;
+      this.lastAdvisoryBChange = nowMs + this.config.advisoryCycleSeconds * 500; // stagger
+    }
+
+    this.showAdvisory(this.el.advisoryA, advisoryAMessages[this.advisoryAIndex]);
+    this.showAdvisory(this.el.advisoryB, advisoryBMessages[this.advisoryBIndex]);
+  }
 
   showAdvisory(el, msg) {
     el.classList.remove("marqueeing");
     el.style.transform = "";
-    el.textContent = msg;
+    el.textContent = replaceZeroWithO(msg);
 
     setTimeout(() => {
       const parent = el.parentNode;
