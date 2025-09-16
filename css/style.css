@@ -76,7 +76,7 @@ body {
 }
 
 .headline {
-  --dot-grid-size: calc(var(--headline-size) / 3.03);
+  --dot-grid-size: calc(var(--headline-size) / 1.6);
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: 700;
   font-synthesis: none;
@@ -109,7 +109,7 @@ body {
 
 /* Advisory/clock rows: 4/7 the height of a headline row */
 .advisory, .clock {
-  --dot-grid-size: calc(var(--advisory-size) / 3.03);
+  --dot-grid-size: calc(var(--advisory-size) / 1.6);
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: 700;
   font-synthesis: none;
