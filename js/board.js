@@ -367,8 +367,8 @@ class SubwayBoard {
     }
 
     if (!isService) {
-      this.el.advisoryA.textContent = "";
-      this.el.advisoryB.textContent = "";
+      this.el.advisoryA.textContent = "\u00A0";
+      this.el.advisoryB.textContent = "\u00A0";
       return;
     }
 
