@@ -6,7 +6,7 @@ const SUBWAY_CONFIG = {
     0: [10.0, 18.5],    // Sunday: 10:00 - 18:30
     1: [6.5, 23.5],    // Monday: 06:30 - 23:30
     2: [6.5, 23.5],    // Tuesday
-    3: [6.5, 23.5],    // Wednesday
+    3: [0.0, 23.5],    // Wednesday TEMP DIFFERENT FOR TEST
     4: [6.5, 23.5],    // Thursday
     5: [6.5, 23.5],    // Friday
     6: [6.5, 23.5],    // Saturday
@@ -73,7 +73,7 @@ const SUBWAY_CONFIG = {
       }
     ]
   },
-  advisoryCycleSeconds: 25,
+  advisoryCycleSeconds: 10,
   marqueeSpeed: 60, // px/sec
   approachingFlash: true
 };
