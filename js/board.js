@@ -50,7 +50,10 @@ const SUBWAY_CONFIG = {
     base: [
       "Keep your belongings with you",
       "Please Mind the Gap",
-      "Report anything suspicious"
+      "Report anything suspicious",
+      "Free Palestine",
+      "Take care on the stairs",
+      "Слава Україні"
     ],
     inserts: [
       { 
