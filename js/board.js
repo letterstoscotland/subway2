@@ -99,8 +99,8 @@ function pad(num, len = 2) {
 
 // --- REPLACE 0 WITH O FOR DISPLAY --- //
 function replaceZeroWithO(str) {
-  // Replace all digit 0 with uppercase letter O everywhere in the string
-  return String(str).replace(/0/g, "O");
+  // Replace all digit 0 with uppercase letter O everywhere in the string UNDONE FOR NOW (replacement is 0)
+  return String(str).replace(/0/g, "0");
 }
 
 // --- FIRST TRAIN CALCULATION --- //
