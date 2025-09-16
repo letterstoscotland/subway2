@@ -146,6 +146,20 @@ body {
   flex-shrink: 0;
 }
 
+/* Flashing animation for APPROACHING text */
+@keyframes flash {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.flashing {
+  animation: flash 1s infinite;
+}
+
 /* Utility: remove default margin on first/last child if any */
 .subway-board > *:first-child,
 .subway-board > *:last-child {
