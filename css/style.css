@@ -20,6 +20,7 @@ body {
 
 /* CSS Variables for easy tuning */
 :root {
+  --dot-grid-size: 13px;
   --headline-size: min(6vw, 8vh);
   --advisory-size: calc(var(--headline-size) * 4 / 7);
   --color-yellow: #ffd800;
@@ -63,7 +64,7 @@ body {
 
 .row {
   background-image: url('data:image/svg+xml;utf8,<svg width="13" height="13" xmlns="http://www.w3.org/2000/svg"><circle cx="6.5" cy="6.5" r="5" fill="rgba(40,40,40,0.7)"/></svg>');
-  background-size: 13px 13px;
+  background-size: var(--dot-grid-size) var(--dot-grid-size);
   background-repeat: repeat;
   display: flex;
   align-items: center;
@@ -75,6 +76,7 @@ body {
 }
 
 .headline {
+  --dot-grid-size: calc(var(--headline-size) / 4.545);
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: 700;
   font-synthesis: none;
@@ -107,6 +109,7 @@ body {
 
 /* Advisory/clock rows: 4/7 the height of a headline row */
 .advisory, .clock {
+  --dot-grid-size: calc(var(--advisory-size) / 4.545);
   font-family: 'DotMatrixBold', 'Roboto Mono', 'Menlo', 'Consolas', monospace, ui-monospace;
   font-weight: 700;
   font-synthesis: none;
