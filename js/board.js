@@ -6,7 +6,7 @@ const SUBWAY_CONFIG = {
     0: [10.0, 18.5],    // Sunday: 10:00 - 18:30
     1: [6.5, 23.5],    // Monday: 06:30 - 23:30
     2: [6.5, 23.5],    // Tuesday
-    3: [0.0, 23.5],    // Wednesday TEMP DIFFERENT FOR TEST
+    3: [6.5, 23.5],    // Wednesday
     4: [6.5, 23.5],    // Thursday
     5: [6.5, 23.5],    // Friday
     6: [6.5, 23.5],    // Saturday
@@ -53,7 +53,8 @@ const SUBWAY_CONFIG = {
       "Report anything suspicious",
       "Free Palestine",
       "Take care on the stairs",
-      "Слава Україні"
+      "Слава Україні!",
+      "Line 2 tunneling underway"
     ],
     inserts: [
       { 
@@ -73,7 +74,7 @@ const SUBWAY_CONFIG = {
       }
     ]
   },
-  advisoryCycleSeconds: 10,
+  advisoryCycleSeconds: 15,
   marqueeSpeed: 60, // px/sec
   approachingFlash: true
 };
@@ -172,7 +173,7 @@ class SubwayBoard {
     this.cycleMinutes = 8;
     // Advisory state
     this.advisoryAIndex = 0;
-    this.advisoryBIndex = 1; // Start offset so both advisories not same
+    this.advisoryBIndex = 3; // Start offset so both advisories not same
     this.lastAdvisoryAChange = 0;
     this.lastAdvisoryBChange = 0;
     // DOM elements
