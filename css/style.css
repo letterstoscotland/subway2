@@ -21,7 +21,7 @@ body {
 /* CSS Variables for easy tuning */
 :root {
   --dot-grid-size: 13px;
-  --headline-size: min(7vw, 9.5vh);
+  --headline-size: min(7vw, 9vh);
   --advisory-size: calc(var(--headline-size) * 4 / 7);
   --color-yellow: #ffd800;
   --glow: 0 0 12px #ffd800, 0 0 28px #ffb000;
@@ -97,13 +97,13 @@ body {
   text-align: left;
   overflow: hidden;
   min-width: 0;
-  padding-right: 0.2vw;
+  padding-right: 0vw;
 }
 .headline-right {
   flex: 0 0 auto;
   text-align: right;
   min-width: 8vw;
-  padding-left: 0.2vw;
+  padding-left: 0vw;
   font-variant-numeric: tabular-nums;
 }
 
