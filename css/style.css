@@ -21,7 +21,7 @@ body {
 /* CSS Variables for easy tuning */
 :root {
   --dot-grid-size: 13px;
-  --headline-size: min(8vw, 10vh);
+  --headline-size: min(7vw, 10vh);
   --advisory-size: calc(var(--headline-size) * 4 / 7);
   --color-yellow: #ffd800;
   --glow: 0 0 12px #ffd800, 0 0 28px #ffb000;
